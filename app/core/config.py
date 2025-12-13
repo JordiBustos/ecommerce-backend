@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     EMAILS_FROM_EMAIL: str = ""
     
+    # Redis
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str = ""
+    CACHE_TTL: int = 300  # Cache TTL in seconds (5 minutes)
+    
     class Config:
         env_file = ".env"
         case_sensitive = True
