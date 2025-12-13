@@ -29,6 +29,7 @@ class Order(Base):
     # Relationships
     user = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order")
+    receipts = relationship("PaymentReceipt", back_populates="order", cascade="all, delete-orphan")
 
 
 class OrderItem(Base):
@@ -43,3 +44,16 @@ class OrderItem(Base):
     # Relationships
     order = relationship("Order", back_populates="items")
     product = relationship("Product")
+
+
+class PaymentReceipt(Base):
+    __tablename__ = "payment_receipts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    file_path = Column(String, nullable=False)  # Path to receipt file (image or PDF)
+    file_type = Column(String, nullable=False)  # MIME type of the file
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    order = relationship("Order", back_populates="receipts")

@@ -23,6 +23,17 @@ class OrderItem(OrderItemBase):
         from_attributes = True
 
 
+class PaymentReceipt(BaseModel):
+    id: int
+    order_id: int
+    file_path: str
+    file_type: str
+    uploaded_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class OrderBase(BaseModel):
     shipping_address: str
 
@@ -45,6 +56,7 @@ class Order(OrderBase):
     created_at: datetime
     updated_at: datetime
     items: List[OrderItem] = []
+    receipts: List[PaymentReceipt] = []
 
     class Config:
         from_attributes = True

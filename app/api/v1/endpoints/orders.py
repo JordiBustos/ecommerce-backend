@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
 from app.api.deps import get_current_active_user, get_current_superuser
@@ -61,3 +61,34 @@ def read_all_orders(
 ):
     """Get all orders (admin only)"""
     return OrderService.get_all_orders(db, current_user, skip, limit)
+
+
+@router.post("/{order_id}/upload-receipt", response_model=OrderSchema)
+async def upload_receipt(
+    order_id: int,
+    file: UploadFile = File(..., description="Payment receipt (image or PDF, max 10MB)"),
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Upload a payment receipt for an order.
+    
+    - Accepts images (JPEG, JPG, PNG, WebP) and PDF files
+    - Maximum file size: 10MB
+    - Multiple receipts can be uploaded per order
+    - Each upload creates a new receipt record
+    
+    Returns the updated order with all receipts.
+    """
+    return await OrderService.upload_receipt(db, order_id, current_user, file)
+
+
+@router.delete("/receipts/{receipt_id}", status_code=204)
+def delete_receipt(
+    receipt_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Delete a payment receipt"""
+    OrderService.delete_receipt(db, receipt_id, current_user)
+    return None

@@ -1,7 +1,10 @@
 from typing import List
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
-from app.models.order import Order, OrderItem, OrderStatus
+from fastapi import HTTPException, UploadFile
+from pathlib import Path
+import os
+import uuid
+from app.models.order import Order, OrderItem, OrderStatus, PaymentReceipt
 from app.models.product import Product
 from app.models.cart import CartItem
 from app.models.user import User
@@ -127,3 +130,92 @@ class OrderService:
         db.commit()
         db.refresh(order)
         return order
+
+    @staticmethod
+    async def upload_receipt(
+        db: Session, order_id: int, user: User, file: UploadFile
+    ) -> Order:
+        """Upload payment receipt for an order (image or PDF) - supports multiple receipts"""
+        order = db.query(Order).filter(Order.id == order_id).first()
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        if order.user_id != user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="Not authorized to upload receipt for this order",
+            )
+
+        allowed_types = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/webp",
+            "application/pdf",
+        ]
+
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File type {file.content_type} not allowed. Allowed types: images (JPEG, JPG, PNG, WebP) and PDF",
+            )
+
+        max_size = 10 * 1024 * 1024  # 10MB in bytes
+        file.file.seek(0, 2)
+        file_size = file.file.tell()
+        file.file.seek(0)
+
+        if file_size > max_size:
+            raise HTTPException(status_code=400, detail=f"File size exceeds 10MB limit")
+
+        upload_dir = Path("uploads/receipts")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        file_extension = Path(file.filename).suffix
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = upload_dir / unique_filename
+
+        try:
+            contents = await file.read()
+            with open(file_path, "wb") as f:
+                f.write(contents)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error saving file: {str(e)}")
+
+        # Create new PaymentReceipt record
+        payment_receipt = PaymentReceipt(
+            order_id=order.id,
+            file_path=str(file_path),
+            file_type=file.content_type
+        )
+        db.add(payment_receipt)
+        db.commit()
+        db.refresh(order)
+
+        return order
+
+    @staticmethod
+    def delete_receipt(db: Session, receipt_id: int, user: User) -> None:
+        """Delete a payment receipt"""
+        receipt = db.query(PaymentReceipt).filter(PaymentReceipt.id == receipt_id).first()
+        if not receipt:
+            raise HTTPException(status_code=404, detail="Receipt not found")
+        
+        # Get the order to check ownership
+        order = db.query(Order).filter(Order.id == receipt.order_id).first()
+        if not order or (order.user_id != user.id and not user.is_superuser):
+            raise HTTPException(
+                status_code=403,
+                detail="Not authorized to delete this receipt"
+            )
+        
+        # Delete the physical file
+        if os.path.exists(receipt.file_path):
+            try:
+                os.remove(receipt.file_path)
+            except Exception:
+                pass  # Continue even if file deletion fails
+        
+        # Delete the database record
+        db.delete(receipt)
+        db.commit()
