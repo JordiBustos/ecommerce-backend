@@ -92,7 +92,7 @@ backend/
 
 1. **Clone the repository**
    ```bash
-   cd /home/jordi/projects/ecommerce/backend
+   cd ecommerce-backend
    ```
 
 2. **Create virtual environment**
@@ -290,10 +290,59 @@ pytest
    - Get your access token
 
 4. **Try the API**
-   - Create products
-   - Set up price lists
+   - Browse products and use the search endpoint
+   - Create products with brands and categories
+   - Set up price lists for different user groups
    - Assign users to price lists
    - Test the shopping cart and order flow
+   - View best-selling products analytics
+   - Configure store settings
+
+## Key Features Deep Dive
+
+### 🔍 Optimized Search Endpoint
+
+The search endpoint (`/api/v1/products/search/`) provides fast, comprehensive product search:
+
+```bash
+# Search across products, categories, and brands
+curl "http://localhost:8001/api/v1/products/search/?q=laptop&limit=20"
+```
+
+**Search Fields:**
+- Product name
+- Product description
+- Product SKU
+- Product EAN
+- Category name
+- Brand name
+
+**Performance Optimizations:**
+- Uses SQL JOINs for efficient querying
+- Eager loads relationships to prevent N+1 queries
+- Case-insensitive search with ILIKE
+- Supports pagination (skip/limit)
+
+### 📦 Advanced Product Management
+
+Products include comprehensive fields for inventory and logistics:
+- **SKU & EAN**: Unique identifiers for inventory tracking
+- **Weight**: For shipping calculations
+- **Stock Management**: `is_always_in_stock` flag or quantity tracking
+- **Purchase Limits**: `max_per_buy` for limiting quantities
+- **Packaging**: `units_per_package` for bulk items
+- **Visual Assets**: Image URLs for product photos
+- **Brand Association**: Link products to brands with logos
+- **Category Hierarchy**: Nested subcategories for better organization
+
+### 💰 Price List System
+
+Flexible pricing for different customer segments:
+- Create multiple price lists with custom names
+- Assign specific users to price lists
+- Override product prices per price list
+- Automatic price selection based on user's assigned list
+- Admin-only management endpoints
 
 ## Security
 
