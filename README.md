@@ -23,13 +23,17 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 
 - 🔐 **Authentication & Authorization**: JWT-based authentication with role-based access control
 - 👥 **User Management**: User registration, login, and profile management with extended fields (DNI, birth date, gender, phone)
-- 📦 **Product Management**: CRUD operations for products and categories
+- 📦 **Product Management**: CRUD operations for products, categories, and brands with nested subcategories
+- 🏷️ **Advanced Product Fields**: SKU, EAN, weight, stock control, max per purchase, units per package
+- 🎨 **Visual Assets**: Image URLs for products, categories, and brands
 - 🛒 **Shopping Cart**: Add, update, and remove items from cart
 - 📝 **Order Processing**: Create and manage orders with inventory tracking
 - 📍 **Address Management**: Multiple shipping addresses per user with default address support
 - 💰 **Price Lists**: Advanced pricing system with user assignment and role-based pricing
 - ⭐ **Favorites**: Users can save favorite products for quick access
-- 🔍 **Search & Filter**: Product search and category filtering
+- 🔍 **Optimized Search**: Fast multi-field search across products, categories, and brands
+- 📊 **Analytics**: Best-selling products endpoint with configurable limits
+- 🏪 **Store Settings**: Customizable store configuration (colors, address, hours, contact)
 - 📊 **Admin Panel**: Admin endpoints for managing users, products, orders, and price lists
 
 ## Tech Stack
@@ -157,14 +161,23 @@ After running `populate_db.py`:
 - `GET /api/v1/users/` - List all users (admin)
 
 ### Products
-- `GET /api/v1/products/` - List products
+- `GET /api/v1/products/` - List products (with pagination and filters)
+- `GET /api/v1/products/search/` - **Search products** (multi-field: name, description, SKU, EAN, category, brand)
 - `GET /api/v1/products/{id}` - Get product details
 - `POST /api/v1/products/` - Create product (admin)
 - `PUT /api/v1/products/{id}` - Update product (admin)
 - `DELETE /api/v1/products/{id}` - Delete product (admin)
 
+### Brands
+- `GET /api/v1/products/brands` - List all brands
+- `GET /api/v1/products/brands/{id}` - Get brand details
+- `POST /api/v1/products/brands` - Create brand (admin)
+- `PUT /api/v1/products/brands/{id}` - Update brand (admin)
+- `DELETE /api/v1/products/brands/{id}` - Delete brand (admin)
+
 ### Categories
-- `GET /api/v1/products/categories` - List categories
+- `GET /api/v1/products/categories` - List categories (with nested subcategories)
+- `GET /api/v1/products/categories/{id}` - Get category details with subcategories
 - `POST /api/v1/products/categories` - Create category (admin)
 - `PUT /api/v1/products/categories/{id}` - Update category (admin)
 - `DELETE /api/v1/products/categories/{id}` - Delete category (admin)
@@ -218,15 +231,16 @@ After running `populate_db.py`:
 
 - **User**: User accounts with authentication and extended profile (DNI, birth date, gender, phone)
 - **Address**: Multiple shipping addresses per user with default address support
-- **Product**: Product catalog with pricing and inventory
-- **Category**: Product categories
-- **CartItem**: Shopping cart items
-- **Order**: Customer orders with order tracking
-- **OrderItem**: Individual items in orders with price snapshots
+- **Product**: Product catalog with SKU, EAN, weight, stock control, brand relationship, and image URL
+- **Brand**: Product brands with name, description, slug, logo URL, and timestamps
+- **Category**: Product categories with nested subcategories (parent_id), image URLs, and hierarchy
+- **CartItem**: Shopping cart items with quantity management
+- **Order**: Customer orders with status tracking and timestamps
+- **OrderItem**: Individual items in orders with price snapshots at purchase time
 - **PriceList**: Custom pricing lists for different user groups
 - **PriceListItem**: Product-specific prices within a price list
 - **UserFavorites**: Many-to-many relationship for favorite products
-- **Store**: Store configuration (branding, address, hours, contact info)
+- **Store**: Store configuration (branding colors, physical address, opening hours, contact info)
 
 ## Environment Variables
 
