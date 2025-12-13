@@ -10,6 +10,7 @@ from app.api.v1.endpoints import (
     favorites,
     best_selling_products,
     store,
+    newsletter,
 )
 
 api_router = APIRouter()
@@ -28,3 +29,4 @@ api_router.include_router(
     best_selling_products.router, prefix="/best-selling", tags=["best-selling"]
 )
 api_router.include_router(store.router, prefix="/store", tags=["store"])
+api_router.include_router(newsletter.router, prefix="/newsletter", tags=["newsletter"])

@@ -15,12 +15,13 @@ from app.db.base import Base
 # Import all models to ensure they're registered
 from app.models.user import User
 from app.models.product import Brand, Category, Product
-from app.models.order import Order, OrderItem
+from app.models.order import Order, OrderItem, PaymentReceipt
 from app.models.cart import CartItem
 from app.models.address import Address
 from app.models.price_list import PriceList, PriceListItem
 from app.models.favorite import user_favorites
 from app.models.store import Store
+from app.models.newsletter import NewsletterSubscriber
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

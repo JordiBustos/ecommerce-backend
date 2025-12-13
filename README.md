@@ -34,7 +34,9 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 - 🔍 **Optimized Search**: Fast multi-field search across products, categories, and brands
 - 📊 **Analytics**: Best-selling products endpoint with configurable limits
 - 🏪 **Store Settings**: Customizable store configuration (colors, address, hours, contact)
-- 📊 **Admin Panel**: Admin endpoints for managing users, products, orders, and price lists
+- � **Newsletter**: Email subscription system with verification workflow
+- 📨 **Email Service**: Professional HTML emails with SMTP support (Gmail, SendGrid, Mailgun, etc.)
+- �📊 **Admin Panel**: Admin endpoints for managing users, products, orders, and price lists
 
 ## Tech Stack
 
@@ -45,6 +47,7 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 - **Pydantic**: Data validation
 - **JWT**: Authentication tokens
 - **Bcrypt**: Password hashing
+- **FastAPI-Mail**: Email sending with SMTP support
 
 ## Project Structure
 
@@ -63,7 +66,9 @@ backend/
 │   │   ├── cart.py          # Shopping cart
 │   │   ├── order.py         # Order processing
 │   │   ├── address.py       # Address management
-│   │   ├── price_list.py    # Price list system
+│   │   ├── favorite.py      # Favorites management
+│   │   ├── newsletter.py    # Newsletter subscriptions
+│   │   └── email.py         # Email service (SMTP)
 │   │   └── favorite.py      # Favorites management
 │   ├── core/
 │   │   ├── config.py         # Configuration
@@ -108,6 +113,7 @@ backend/
 
 4. **Set up environment variables**
    ```bash
+   # For email functionality, add SMTP settings (see EMAIL_SETUP.md)
    cp .env.example .env
    # Edit .env with your configuration
    ```
@@ -225,6 +231,12 @@ After running `populate_db.py`:
 
 ### Store Settings
 - `GET /api/v1/store/` - Get store settings (public)
+
+### Newsletter
+- `POST /api/v1/newsletter/subscribe` - Subscribe email to newsletter (public)
+- `GET /api/v1/newsletter/verify?token={token}` - Verify email subscription (public)
+- `DELETE /api/v1/newsletter/unsubscribe?email={email}` - Unsubscribe from newsletter (public)
+- `GET /api/v1/newsletter/subscribers` - List all subscribers (admin)
 - `PUT /api/v1/store/` - Update store settings (admin)
 
 ## Database Models
@@ -235,6 +247,8 @@ After running `populate_db.py`:
 - **Brand**: Product brands with name, description, slug, logo URL, and timestamps
 - **Category**: Product categories with nested subcategories (parent_id), image URLs, and hierarchy
 - **CartItem**: Shopping cart items with quantity management
+- **NewsletterSubscriber**: Email subscriptions with verification tokens and validation status
+- **PaymentReceipt**: Multiple payment receipt uploads per order
 - **Order**: Customer orders with status tracking and timestamps
 - **OrderItem**: Individual items in orders with price snapshots at purchase time
 - **PriceList**: Custom pricing lists for different user groups
@@ -242,6 +256,13 @@ After running `populate_db.py`:
 - **UserFavorites**: Many-to-many relationship for favorite products
 - **Store**: Store configuration (branding colors, physical address, opening hours, contact info)
 
+- `SMTP_HOST`: Email server hostname (e.g., smtp.gmail.com)
+- `SMTP_PORT`: Email server port (default: 587)
+- `SMTP_USER`: SMTP username/email
+- `SMTP_PASSWORD`: SMTP password (use App Password for Gmail)
+- `EMAILS_FROM_EMAIL`: Sender email address
+
+**Email Configuration**: See [EMAIL_SETUP.md](EMAIL_SETUP.md) for detailed SMTP setup instructions.
 ## Environment Variables
 
 See `.env.example` for all available configuration options:
@@ -334,6 +355,39 @@ Products include comprehensive fields for inventory and logistics:
 - **Visual Assets**: Image URLs for product photos
 - **Brand Association**: Link products to brands with logos
 - **Category Hierarchy**: Nested subcategories for better organization
+
+### 📧 Newsletter & Email System
+
+Professional email subscription system with verification workflow:
+
+**Features:**
+- Email collection with validation
+- Token-based email verification
+- Professional HTML email templates
+- Support for multiple SMTP providers (Gmail, SendGrid, Mailgun, AWS SES, etc.)
+- Automatic fallback to console logging for development
+- Unsubscribe functionality
+- Admin dashboard for subscriber management
+
+**Email Templates:**
+- Verification email with branded styling
+- Welcome email after confirmation
+- Responsive HTML design
+
+**Setup:**
+```bash
+# Configure SMTP in .env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+EMAILS_FROM_EMAIL=your-email@gmail.com
+```
+
+For detailed setup instructions including Gmail App Passwords, see [EMAIL_SETUP.md](EMAIL_SETUP.md).
+
+**Testing without SMTP:**
+Leave SMTP settings empty in `.env` and emails will be logged to console with verification links for testing.
 
 ### 💰 Price List System
 
