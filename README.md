@@ -362,8 +362,6 @@ SMTP_PASSWORD=your-app-password
 EMAILS_FROM_EMAIL=your-email@gmail.com
 ```
 
-For detailed setup instructions including Gmail App Passwords, see [EMAIL_SETUP.md](EMAIL_SETUP.md).
-
 **Testing without SMTP:**
 Leave SMTP settings empty in `.env` and emails will be logged to console with verification links for testing.
 
