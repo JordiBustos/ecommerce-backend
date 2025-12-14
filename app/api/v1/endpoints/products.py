@@ -18,6 +18,7 @@ from app.schemas.product import (
     CSVImportResult,
     ProductListResponse,
 )
+from app.services.product import ProductService
 from app.services.product import CategoryService, ProductService, BrandService
 
 router = APIRouter()
@@ -171,7 +172,9 @@ def read_products(
     """Get all products with optional filters. Returns products list and total count for pagination."""
     categories_filter = categories_id if categories_id else None
     brands_filter = brands_id if brands_id else None
-    products, total = ProductService.get_products(db, skip, limit, categories_filter, brands_filter, search)
+    products, total = ProductService.get_products(
+        db, skip, limit, categories_filter, brands_filter, search
+    )
     return {"products": products, "total": total}
 
 
@@ -194,8 +197,7 @@ def update_product(
 
 @router.delete("/all", status_code=200)
 def delete_all_products(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_superuser),
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_superuser)
 ):
     """Delete all products from database (admin only)"""
     count = ProductService.delete_all_products(db)

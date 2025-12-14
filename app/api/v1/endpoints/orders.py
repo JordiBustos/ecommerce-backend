@@ -66,18 +66,20 @@ def read_all_orders(
 @router.post("/{order_id}/upload-receipt", response_model=OrderSchema)
 async def upload_receipt(
     order_id: int,
-    file: UploadFile = File(..., description="Payment receipt (image or PDF, max 10MB)"),
+    file: UploadFile = File(
+        ..., description="Payment receipt (image or PDF, max 10MB)"
+    ),
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     """
     Upload a payment receipt for an order.
-    
+
     - Accepts images (JPEG, JPG, PNG, WebP) and PDF files
     - Maximum file size: 10MB
     - Multiple receipts can be uploaded per order
     - Each upload creates a new receipt record
-    
+
     Returns the updated order with all receipts.
     """
     return await OrderService.upload_receipt(db, order_id, current_user, file)

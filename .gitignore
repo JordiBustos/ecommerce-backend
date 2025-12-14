@@ -21,3 +21,5 @@ build/
 *.egg-info/
 
 uploads/receipts/
+logs/access.log
+logs/security.log

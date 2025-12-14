@@ -18,7 +18,7 @@ def get_store_settings(db: Session = Depends(get_db)):
 def update_store_settings(
     store_update: StoreUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_superuser)
+    current_user: User = Depends(get_current_superuser),
 ):
     """Update store settings (admin only)"""
     return StoreService.update_store_settings(db, store_update)

@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
 from app.core.config import settings
 from app.core.security import create_access_token, verify_password, get_password_hash
@@ -23,15 +24,50 @@ class AuthService:
                 status_code=400, detail="User with this username already exists"
             )
 
+        user = db.query(User).filter(User.dni == user_in.dni).first()
+        if user:
+            raise HTTPException(
+                status_code=400, detail="User with this DNI already exists"
+            )
+
         db_user = User(
             email=user_in.email,
             username=user_in.username,
             full_name=user_in.full_name,
             hashed_password=get_password_hash(user_in.password),
+            is_active=True,
+            is_superuser=False,
+            gender=user_in.gender,
+            birth_date=user_in.birth_date,
+            dni=user_in.dni,
+            phone_number=user_in.phone_number,
         )
+
         db.add(db_user)
-        db.commit()
-        db.refresh(db_user)
+        
+        try:
+            db.commit()
+            db.refresh(db_user)
+        except IntegrityError as e:
+            db.rollback()
+            error_msg = str(e.orig)
+            if "users.email" in error_msg:
+                raise HTTPException(
+                    status_code=400, detail="User with this email already exists"
+                )
+            elif "users.username" in error_msg:
+                raise HTTPException(
+                    status_code=400, detail="User with this username already exists"
+                )
+            elif "users.dni" in error_msg:
+                raise HTTPException(
+                    status_code=400, detail="User with this DNI already exists"
+                )
+            else:
+                raise HTTPException(
+                    status_code=400, detail="Registration failed: duplicate value detected"
+                )
+        
         return db_user
 
     @staticmethod

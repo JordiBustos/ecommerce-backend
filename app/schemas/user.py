@@ -1,6 +1,8 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator, ValidationInfo
 from typing import Optional
 from datetime import datetime, date
+from app.core.honeypot import HoneypotMixin
+from app.core.input_validation import InputSanitizer, validate_password_strength
 
 
 class UserBase(BaseModel):
@@ -12,9 +14,34 @@ class UserBase(BaseModel):
     gender: Optional[str] = None
     phone_number: Optional[str] = None
 
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v: str, info: ValidationInfo) -> str:
+        return InputSanitizer.sanitize_string(v, max_length=50)
 
-class UserCreate(UserBase):
+    @field_validator('full_name')
+    @classmethod
+    def validate_full_name(cls, v: Optional[str], info: ValidationInfo) -> Optional[str]:
+        if v:
+            return InputSanitizer.sanitize_string(v, max_length=100)
+        return v
+
+    @field_validator('phone_number')
+    @classmethod
+    def validate_phone(cls, v: Optional[str], info: ValidationInfo) -> Optional[str]:
+        if v:
+            return InputSanitizer.sanitize_phone(v)
+        return v
+
+
+class UserCreate(UserBase, HoneypotMixin):
     password: str
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: str, info: ValidationInfo) -> str:
+        validate_password_strength(v)
+        return v
 
 
 class UserUpdate(BaseModel):

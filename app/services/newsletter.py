@@ -87,6 +87,27 @@ class NewsletterService:
         db.commit()
 
     @staticmethod
+    def get_subscription_status(db: Session, email: str) -> dict:
+        """Check if an email is subscribed to the newsletter"""
+        subscriber = db.query(NewsletterSubscriber).filter(
+            NewsletterSubscriber.email == email
+        ).first()
+        
+        if not subscriber:
+            return {
+                "subscribed": False,
+                "validated": False,
+                "email": email
+            }
+        
+        return {
+            "subscribed": True,
+            "validated": subscriber.validated,
+            "email": subscriber.email,
+            "subscribed_at": subscriber.subscribed_at
+        }
+
+    @staticmethod
     def get_all_subscribers(
         db: Session, validated_only: bool = False, skip: int = 0, limit: int = 100
     ):
