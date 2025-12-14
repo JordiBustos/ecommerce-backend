@@ -129,3 +129,8 @@ class CSVImportResult(BaseModel):
     failed: int
     errors: List[CSVImportError] = []
     message: str
+
+
+class ProductListResponse(BaseModel):
+    products: List[Product]
+    total: int

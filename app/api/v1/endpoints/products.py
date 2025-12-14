@@ -16,10 +16,15 @@ from app.schemas.product import (
     BrandCreate,
     BrandUpdate,
     CSVImportResult,
+    ProductListResponse,
 )
 from app.services.product import CategoryService, ProductService, BrandService
 
 router = APIRouter()
+
+# Singleton instances using Dependency Injection pattern
+brand_service = BrandService()
+category_service = CategoryService()
 
 
 # Brands
@@ -30,19 +35,19 @@ def create_brand(
     current_user: User = Depends(get_current_superuser),
 ):
     """Create a new brand (admin only)"""
-    return BrandService.create_brand(db, brand_in)
+    return brand_service.create_brand(db, brand_in)
 
 
 @router.get("/brands", response_model=List[BrandSchema])
 def read_brands(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all brands"""
-    return BrandService.get_brands(db, skip, limit)
+    return brand_service.get_brands(db, skip, limit)
 
 
 @router.get("/brands/{brand_id}", response_model=BrandSchema)
 def read_brand(brand_id: int, db: Session = Depends(get_db)):
     """Get brand by ID"""
-    return BrandService.get_brand(db, brand_id)
+    return brand_service.get_brand(db, brand_id)
 
 
 @router.put("/brands/{brand_id}", response_model=BrandSchema)
@@ -53,7 +58,7 @@ def update_brand(
     current_user: User = Depends(get_current_superuser),
 ):
     """Update brand (admin only)"""
-    return BrandService.update_brand(db, brand_id, brand_in)
+    return brand_service.update_brand(db, brand_id, brand_in)
 
 
 @router.delete("/brands/{brand_id}", status_code=204)
@@ -63,7 +68,7 @@ def delete_brand(
     current_user: User = Depends(get_current_superuser),
 ):
     """Delete brand (admin only)"""
-    BrandService.delete_brand(db, brand_id)
+    brand_service.delete_brand(db, brand_id)
     return None
 
 
@@ -75,7 +80,7 @@ def create_category(
     current_user: User = Depends(get_current_superuser),
 ):
     """Create a new category or subcategory (admin only)"""
-    return CategoryService.create_category(db, category_in)
+    return category_service.create_category(db, category_in)
 
 
 @router.get("/categories", response_model=List[CategorySchema])
@@ -88,13 +93,13 @@ def read_categories(
     db: Session = Depends(get_db),
 ):
     """Get all categories, optionally filter to parent categories only"""
-    return CategoryService.get_categories(db, skip, limit, parent_only)
+    return category_service.get_categories(db, skip, limit, parent_only)
 
 
 @router.get("/categories/{category_id}", response_model=CategoryWithSubcategories)
 def read_category(category_id: int, db: Session = Depends(get_db)):
     """Get category by ID with its subcategories"""
-    return CategoryService.get_category(db, category_id)
+    return category_service.get_category(db, category_id)
 
 
 @router.get(
@@ -102,7 +107,7 @@ def read_category(category_id: int, db: Session = Depends(get_db)):
 )
 def read_subcategories(category_id: int, db: Session = Depends(get_db)):
     """Get all subcategories of a category"""
-    return CategoryService.get_subcategories(db, category_id)
+    return category_service.get_subcategories(db, category_id)
 
 
 @router.put("/categories/{category_id}", response_model=CategorySchema)
@@ -113,7 +118,7 @@ def update_category(
     current_user: User = Depends(get_current_superuser),
 ):
     """Update category (admin only)"""
-    return CategoryService.update_category(db, category_id, category_in)
+    return category_service.update_category(db, category_id, category_in)
 
 
 @router.delete("/categories/{category_id}", status_code=204)
@@ -123,7 +128,7 @@ def delete_category(
     current_user: User = Depends(get_current_superuser),
 ):
     """Delete category (admin only)"""
-    CategoryService.delete_category(db, category_id)
+    category_service.delete_category(db, category_id)
     return None
 
 
@@ -138,7 +143,7 @@ def create_product(
     return ProductService.create_product(db, product_in)
 
 
-@router.get("/search/", response_model=List[ProductSchema])
+@router.get("/search/", response_model=ProductListResponse)
 def search_products(
     q: str = Query(..., min_length=1, description="Search query"),
     skip: int = Query(0, ge=0),
@@ -148,20 +153,26 @@ def search_products(
     """
     Search products across multiple fields (optimized).
     Searches in: name, description, SKU, EAN, category name, brand name.
+    Returns products list and total count for pagination.
     """
-    return ProductService.search_products(db, q, skip, limit)
+    products, total = ProductService.search_products(db, q, skip, limit)
+    return {"products": products, "total": total}
 
 
-@router.get("/", response_model=List[ProductSchema])
+@router.get("/", response_model=ProductListResponse)
 def read_products(
     skip: int = 0,
     limit: int = 100,
-    category_id: Optional[int] = None,
+    categories_id: List[int] = Query(default=[], alias="categories_id[]"),
+    brands_id: List[int] = Query(default=[], alias="brands_id[]"),
     search: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
-    """Get all products with optional filters"""
-    return ProductService.get_products(db, skip, limit, category_id, search)
+    """Get all products with optional filters. Returns products list and total count for pagination."""
+    categories_filter = categories_id if categories_id else None
+    brands_filter = brands_id if brands_id else None
+    products, total = ProductService.get_products(db, skip, limit, categories_filter, brands_filter, search)
+    return {"products": products, "total": total}
 
 
 @router.get("/{product_id}", response_model=ProductSchema)

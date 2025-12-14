@@ -15,130 +15,177 @@ from app.schemas.product import (
     CSVImportResult,
     CSVImportError,
 )
+from app.services.base import SlugUniqueService
 
 
-class BrandService:
-    @staticmethod
-    def create_brand(db: Session, brand_in: BrandCreate) -> Brand:
-        """Create a new brand"""
-        existing = db.query(Brand).filter(Brand.slug == brand_in.slug).first()
-        if existing:
-            raise HTTPException(
-                status_code=400, detail="Brand with this slug already exists"
-            )
+class BrandService(SlugUniqueService[Brand, BrandCreate, BrandUpdate]):
+    """
+    Brand service with CRUD operations.
+    Inherits common operations from SlugUniqueService (Repository pattern).
+    """
 
-        brand = Brand(**brand_in.model_dump())
-        db.add(brand)
-        db.commit()
-        db.refresh(brand)
-        return brand
+    def __init__(self):
+        super().__init__(Brand)
 
-    @staticmethod
-    def get_brands(db: Session, skip: int = 0, limit: int = 100) -> List[Brand]:
+    def get_brands(self, db: Session, skip: int = 0, limit: int = 100) -> List[Brand]:
         """Get all brands with pagination"""
-        return db.query(Brand).offset(skip).limit(limit).all()
+        return self.get_multi(db, skip, limit)
 
-    @staticmethod
-    def get_brand(db: Session, brand_id: int) -> Brand:
+    def get_brand(self, db: Session, brand_id: int) -> Brand:
         """Get brand by ID"""
-        brand = db.query(Brand).filter(Brand.id == brand_id).first()
-        if not brand:
-            raise HTTPException(status_code=404, detail="Brand not found")
-        return brand
+        return self.get(db, brand_id)
 
-    @staticmethod
-    def update_brand(db: Session, brand_id: int, brand_in: BrandUpdate) -> Brand:
+    def create_brand(self, db: Session, brand_in: BrandCreate) -> Brand:
+        """Create a new brand"""
+        return self.create(db, brand_in)
+
+    def update_brand(self, db: Session, brand_id: int, brand_in: BrandUpdate) -> Brand:
         """Update brand"""
-        brand = BrandService.get_brand(db, brand_id)
-        update_data = brand_in.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(brand, field, value)
-        db.commit()
-        db.refresh(brand)
-        return brand
+        return self.update(db, brand_id, brand_in)
 
-    @staticmethod
-    def delete_brand(db: Session, brand_id: int) -> None:
+    def delete_brand(self, db: Session, brand_id: int) -> None:
         """Delete brand"""
-        brand = BrandService.get_brand(db, brand_id)
-        db.delete(brand)
-        db.commit()
+        self.delete(db, brand_id)
 
 
-class CategoryService:
-    @staticmethod
-    def create_category(db: Session, category_in: CategoryCreate) -> Category:
-        """Create a new category or subcategory"""
-        existing = db.query(Category).filter(Category.slug == category_in.slug).first()
-        if existing:
-            raise HTTPException(
-                status_code=400, detail="Category with this slug already exists"
-            )
+class CategoryService(SlugUniqueService[Category, CategoryCreate, CategoryUpdate]):
+    """
+    Category service with CRUD operations and hierarchy support.
+    Inherits common operations from SlugUniqueService (Repository pattern).
+    """
 
+    def __init__(self):
+        super().__init__(Category)
+
+    def create_category(self, db: Session, category_in: CategoryCreate) -> Category:
+        """Create a new category or subcategory with parent validation"""
         if category_in.parent_id:
-            parent = (
-                db.query(Category).filter(Category.id == category_in.parent_id).first()
-            )
+            parent = db.query(Category).filter(Category.id == category_in.parent_id).first()
             if not parent:
                 raise HTTPException(status_code=404, detail="Parent category not found")
 
-        category = Category(**category_in.model_dump())
-        db.add(category)
-        db.commit()
-        db.refresh(category)
-        return category
+        return self.create(db, category_in)
 
-    @staticmethod
     def get_categories(
-        db: Session, skip: int = 0, limit: int = 100, parent_only: bool = False
+        self, db: Session, skip: int = 0, limit: int = 100, parent_only: bool = False
     ) -> List[Category]:
         """Get all categories with pagination"""
-        query = db.query(Category)
         if parent_only:
-            query = query.filter(Category.parent_id == None)
-        return query.offset(skip).limit(limit).all()
+            query = db.query(Category).filter(Category.parent_id == None)
+            return query.offset(skip).limit(limit).all()
+        return self.get_multi(db, skip, limit)
 
-    @staticmethod
-    def get_category(db: Session, category_id: int) -> Category:
+    def get_category(self, db: Session, category_id: int) -> Category:
         """Get category by ID"""
-        category = db.query(Category).filter(Category.id == category_id).first()
-        if not category:
-            raise HTTPException(status_code=404, detail="Category not found")
-        return category
+        return self.get(db, category_id)
 
-    @staticmethod
-    def get_subcategories(db: Session, category_id: int) -> List[Category]:
+    def get_subcategories(self, db: Session, category_id: int) -> List[Category]:
         """Get all subcategories of a category"""
         return db.query(Category).filter(Category.parent_id == category_id).all()
 
-    @staticmethod
     def update_category(
-        db: Session, category_id: int, category_in: CategoryUpdate
+        self, db: Session, category_id: int, category_in: CategoryUpdate
     ) -> Category:
         """Update category"""
-        category = CategoryService.get_category(db, category_id)
-        update_data = category_in.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(category, field, value)
-        db.commit()
-        db.refresh(category)
-        return category
+        return self.update(db, category_id, category_in)
+
+    def delete_category(self, db: Session, category_id: int) -> None:
+        """Delete category"""
+        self.delete(db, category_id)
+
+
+class ProductQueryBuilder:
+    """
+    Builder pattern for constructing product queries.
+    Provides fluent interface for filtering products.
+    """
+
+    def __init__(self, db: Session):
+        self.db = db
+        self.query = db.query(Product).filter(Product.is_active == True)
+
+    def filter_by_categories(self, categories_id: Optional[List[int]]):
+        """Add category filter"""
+        if categories_id:
+            self.query = self.query.filter(Product.category_id.in_(categories_id))
+        return self
+
+    def filter_by_brands(self, brands_id: Optional[List[int]]):
+        """Add brand filter"""
+        if brands_id:
+            self.query = self.query.filter(Product.brand_id.in_(brands_id))
+        return self
+
+    def filter_by_search(self, search: Optional[str]):
+        """Add text search filter"""
+        if search:
+            self.query = self.query.filter(Product.name.ilike(f"%{search}%"))
+        return self
+
+    def with_joins(self):
+        """Add eager loading for relationships"""
+        self.query = self.query.options(
+            joinedload(Product.category), joinedload(Product.brand)
+        )
+        return self
+
+    def get_results(self, skip: int = 0, limit: int = 100) -> tuple[List[Product], int]:
+        """Execute query and return results with total count"""
+        total = self.query.count()
+        products = self.query.offset(skip).limit(limit).all()
+        return products, total
+
+
+class ProductSearchStrategy:
+    """
+    Strategy pattern for different search implementations.
+    Encapsulates search algorithm.
+    """
 
     @staticmethod
-    def delete_category(db: Session, category_id: int) -> None:
-        """Delete category"""
-        category = CategoryService.get_category(db, category_id)
-        db.delete(category)
-        db.commit()
+    def search_multi_field(
+        db: Session, search_term: str, skip: int = 0, limit: int = 100
+    ) -> tuple[List[Product], int]:
+        """
+        Search across multiple fields with joins.
+        Searches: name, description, SKU, EAN, category name, brand name
+        """
+        search_pattern = f"%{search_term}%"
+
+        query = (
+            db.query(Product)
+            .outerjoin(Category, Product.category_id == Category.id)
+            .outerjoin(Brand, Product.brand_id == Brand.id)
+            .filter(Product.is_active == True)
+            .filter(
+                or_(
+                    Product.name.ilike(search_pattern),
+                    Product.description.ilike(search_pattern),
+                    Product.sku.ilike(search_pattern),
+                    Product.ean.ilike(search_pattern),
+                    Category.name.ilike(search_pattern),
+                    Brand.name.ilike(search_pattern),
+                )
+            )
+            .options(joinedload(Product.category), joinedload(Product.brand))
+            .distinct()
+        )
+
+        total = query.count()
+        products = query.offset(skip).limit(limit).all()
+        return products, total
 
 
 class ProductService:
+    """
+    Product service with business logic.
+    Uses Builder and Strategy patterns for complex queries.
+    """
+
     @staticmethod
     def create_product(db: Session, product_in: ProductCreate) -> Product:
-        """Create a new product"""
-        category = (
-            db.query(Category).filter(Category.id == product_in.category_id).first()
-        )
+        """Create a new product with category validation"""
+        category = db.query(Category).filter(Category.id == product_in.category_id).first()
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
 
@@ -153,19 +200,21 @@ class ProductService:
         db: Session,
         skip: int = 0,
         limit: int = 100,
-        category_id: Optional[int] = None,
+        categories_id: Optional[List[int]] = None,
+        brands_id: Optional[List[int]] = None,
         search: Optional[str] = None,
-    ) -> List[Product]:
-        """Get all products with pagination and filters"""
-        query = db.query(Product).filter(Product.is_active == True)
-
-        if category_id:
-            query = query.filter(Product.category_id == category_id)
-
-        if search:
-            query = query.filter(Product.name.ilike(f"%{search}%"))
-
-        return query.offset(skip).limit(limit).all()
+    ) -> tuple[List[Product], int]:
+        """
+        Get products with filters using Builder pattern.
+        Returns (products, total_count)
+        """
+        builder = ProductQueryBuilder(db)
+        return (
+            builder.filter_by_categories(categories_id)
+            .filter_by_brands(brands_id)
+            .filter_by_search(search)
+            .get_results(skip, limit)
+        )
 
     @staticmethod
     def get_product(db: Session, product_id: int) -> Product:
@@ -220,34 +269,12 @@ class ProductService:
         query: str,
         skip: int = 0,
         limit: int = 100,
-    ) -> List[Product]:
+    ) -> tuple[List[Product], int]:
         """
-        Search products across multiple fields optimized with joins.
-        Searches in: product name, description, SKU, EAN, category name, brand name
+        Search products using Strategy pattern.
+        Returns (products, total_count)
         """
-        search_term = f"%{query}%"
-
-        # Build query with eager loading to avoid N+1 queries
-        products_query = (
-            db.query(Product)
-            .outerjoin(Category, Product.category_id == Category.id)
-            .outerjoin(Brand, Product.brand_id == Brand.id)
-            .filter(Product.is_active == True)
-            .filter(
-                or_(
-                    Product.name.ilike(search_term),
-                    Product.description.ilike(search_term),
-                    Product.sku.ilike(search_term),
-                    Product.ean.ilike(search_term),
-                    Category.name.ilike(search_term),
-                    Brand.name.ilike(search_term),
-                )
-            )
-            .options(joinedload(Product.category), joinedload(Product.brand))
-            .distinct()
-        )
-
-        return products_query.offset(skip).limit(limit).all()
+        return ProductSearchStrategy.search_multi_field(db, query, skip, limit)
 
     @staticmethod
     def import_products_from_csv(
