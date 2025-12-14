@@ -35,7 +35,9 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 - ⚡ **Redis Caching**: Optional Redis integration for improved performance on frequently accessed data
 - 🏪 **Store Settings**: Customizable store configuration (colors, address, hours, contact)
 - � **Newsletter**: Email subscription system with verification workflow
-- 📨 **Email Service**: Professional HTML emails with SMTP support (Gmail, SendGrid, Mailgun, etc.)- 📥 **CSV Import**: Bulk product import from CSV files with batch processing (50 products per batch)- �📊 **Admin Panel**: Admin endpoints for managing users, products, orders, and price lists
+- 📨 **Email Service**: Professional HTML emails with SMTP support (Gmail, SendGrid, Mailgun, etc.)
+- 📥 **CSV Import**: Bulk product import from CSV files with batch processing (50 products per batch)
+- 📊 **Admin Panel**: Admin endpoints for managing users, products, orders, and price lists
 
 ## Tech Stack
 
@@ -54,7 +56,7 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 ### Prerequisites
 
 - Python 3.13+
-- Redis (optional, for caching - see [REDIS_SETUP.md](REDIS_SETUP.md))
+- Redis (optional, for caching)
 - SQLite (included with Python)
 
 ### Installation
