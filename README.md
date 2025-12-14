@@ -11,13 +11,12 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 ```
 
 **Key Benefits:**
+
 - 🎯 Separation of concerns
 - 🧪 Easier testing (unit tests for services, integration tests for routes)
 - 🔄 Reusable business logic
 - 📖 Better maintainability
 - 🛡️ Type-safe interfaces
-
-**See [SERVICE_LAYER.md](SERVICE_LAYER.md) for detailed architecture documentation.**
 
 ## ✨ Features
 
@@ -51,43 +50,6 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 - **FastAPI-Mail**: Email sending with SMTP support
 - **Redis**: Optional in-memory caching for improved performance
 
-## Project Structure
-
-```
-backend/
-├── app/
-│   ├── api/
-│   │   ├── deps.py           # Dependencies (auth, db)
-│   │   └── v1/
-│   │       ├── api.py        # API router
-│   │       └── endpoints/    # HTTP layer (thin routers)
-│   ├── services/             # Business logic layer
-│   │   ├── auth.py          # Authentication service
-│   │   ├── user.py          # User management
-│   │   ├── product.py       # Products & categories
-│   │   ├── cart.py          # Shopping cart
-│   │   ├── order.py         # Order processing
-│   │   ├── address.py       # Address management
-│   │   ├── favorite.py      # Favorites management
-│   │   ├── newsletter.py    # Newsletter subscriptions
-│   │   └── email.py         # Email service (SMTP)
-│   │   └── favorite.py      # Favorites management
-│   ├── core/
-│   │   ├── config.py         # Configuration
-│   │   └── security.py       # Security utilities
-│   ├── db/
-│   │   └── base.py           # Database setup
-│   ├── models/               # SQLAlchemy models
-│   ├── schemas/              # Pydantic schemas
-│   └── main.py               # Application entry point
-├── alembic/                  # Database migrations
-├── populate_db.py            # Sample data script
-├── requirements.txt
-├── .env.example
-├── SERVICE_LAYER.md          # Architecture documentation
-└── README.md
-```
-
 ## Getting Started
 
 ### Prerequisites
@@ -99,22 +61,26 @@ backend/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    cd ecommerce-backend
    ```
 
 2. **Create virtual environment**
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Set up environment variables**
+
    ```bash
    # For email functionality, add SMTP settings (see EMAIL_SETUP.md)
    cp .env.example .env
@@ -122,15 +88,19 @@ backend/
    ```
 
 5. **Run migrations**
+
    ```bash
    alembic upgrade head
    ```
 
 6. **Populate database with sample data** (optional)
+
    ```bash
    python populate_db.py
    ```
+
    This will create:
+
    - 1 admin user (admin@ecommerce.com / admin123)
    - 3 regular users (password123 for all)
    - 5 categories with 18 products
@@ -161,15 +131,18 @@ After running `populate_db.py`:
 ## API Endpoints
 
 ### Authentication
+
 - `POST /api/v1/auth/register` - Register new user
 - `POST /api/v1/auth/login` - Login user
 
 ### Users
+
 - `GET /api/v1/users/me` - Get current user
 - `PUT /api/v1/users/me` - Update current user (includes dni, birth_date, gender, phone_number)
 - `GET /api/v1/users/` - List all users (admin)
 
 ### Products
+
 - `GET /api/v1/products/` - List products (with pagination and filters)
 - `GET /api/v1/products/search/` - **Search products** (multi-field: name, description, SKU, EAN, category, brand)
 - `GET /api/v1/products/{id}` - Get product details
@@ -178,6 +151,7 @@ After running `populate_db.py`:
 - `DELETE /api/v1/products/{id}` - Delete product (admin)
 
 ### Brands
+
 - `GET /api/v1/products/brands` - List all brands
 - `GET /api/v1/products/brands/{id}` - Get brand details
 - `POST /api/v1/products/brands` - Create brand (admin)
@@ -185,6 +159,7 @@ After running `populate_db.py`:
 - `DELETE /api/v1/products/brands/{id}` - Delete brand (admin)
 
 ### Categories
+
 - `GET /api/v1/products/categories` - List categories (with nested subcategories)
 - `GET /api/v1/products/categories/{id}` - Get category details with subcategories
 - `POST /api/v1/products/categories` - Create category (admin)
@@ -192,12 +167,14 @@ After running `populate_db.py`:
 - `DELETE /api/v1/products/categories/{id}` - Delete category (admin)
 
 ### Best Selling Products
-  - **Cached with Redis** for 5 minutes (if Redis is available)
-  - Falls back to database queries if Redis is not running
+
+- **Cached with Redis** for 5 minutes (if Redis is available)
+- Falls back to database queries if Redis is not running
 - `POST /api/v1/best-selling/cache/clear` - Clear cache (admin only)
 - `GET /api/v1/best-selling/` - Get top best-selling products (default: 12, max: 50)
 
 ### Cart
+
 - `GET /api/v1/cart/` - Get user's cart
 - `POST /api/v1/cart/items` - Add item to cart
 - `PUT /api/v1/cart/items/{id}` - Update cart item
@@ -205,6 +182,7 @@ After running `populate_db.py`:
 - `DELETE /api/v1/cart/` - Clear cart
 
 ### Orders
+
 - `GET /api/v1/orders/` - List user's orders
 - `GET /api/v1/orders/{id}` - Get order details
 - `POST /api/v1/orders/` - Create order
@@ -212,6 +190,7 @@ After running `populate_db.py`:
 - `GET /api/v1/orders/all/admin` - List all orders (admin)
 
 ### Addresses
+
 - `GET /api/v1/addresses/` - Get all user addresses
 - `GET /api/v1/addresses/{id}` - Get specific address
 - `POST /api/v1/addresses/` - Create new address
@@ -219,6 +198,7 @@ After running `populate_db.py`:
 - `DELETE /api/v1/addresses/{id}` - Delete address
 
 ### Price Lists (Admin Only)
+
 - `GET /api/v1/price-lists/` - List all price lists
 - `GET /api/v1/price-lists/{id}` - Get specific price list
 - `POST /api/v1/price-lists/` - Create price list
@@ -231,14 +211,17 @@ After running `populate_db.py`:
 - `DELETE /api/v1/price-lists/items/{item_id}` - Remove product from list
 
 ### Favorites
+
 - `GET /api/v1/favorites/` - Get all user favorite products
 - `POST /api/v1/favorites/{product_id}` - Add product to favorites
 - `DELETE /api/v1/favorites/{product_id}` - Remove product from favorites
 
 ### Store Settings
+
 - `GET /api/v1/store/` - Get store settings (public)
 
 ### Newsletter
+
 - `POST /api/v1/newsletter/subscribe` - Subscribe email to newsletter (public)
 - `GET /api/v1/newsletter/verify?token={token}` - Verify email subscription (public)
 - `DELETE /api/v1/newsletter/unsubscribe?email={email}` - Unsubscribe from newsletter (public)
@@ -273,64 +256,40 @@ After running `populate_db.py`:
 **Email Configuration**: See [EMAIL_SETUP.md](EMAIL_SETUP.md) for detailed SMTP setup instructions.
 
 **Redis Configuration**: See [REDIS_SETUP.md](REDIS_SETUP.md) for Redis setup and caching details. Redis is completely optional - the app works perfectly without it
+
 - `EMAILS_FROM_EMAIL`: Sender email address
 
 **Email Configuration**: See [EMAIL_SETUP.md](EMAIL_SETUP.md) for detailed SMTP setup instructions.
+
 ## Environment Variables
 
 See `.env.example` for all available configuration options:
 
-- `DATABASE_URL`: Database connection string (default: sqlite:///./ecommerce.db)
-- `SECRET_KEY`: JWT secret key
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time
-- `BACKEND_CORS_ORIGINS`: Allowed CORS origins
-
 ## Development
 
 ### Populate database with sample data
+
 ```bash
 python populate_db.py
 ```
 
 ### Create database migration
+
 ```bash
 alembic revision --autogenerate -m "description"
 ```
 
 ### Apply migrations
+
 ```bash
 alembic upgrade head
 ```
 
 ### Run tests
+
 ```bash
 pytest
 ```
-
-## Quick Start Example
-
-1. **Start the server**
-   ```bash
-   uvicorn app.main:app --reload --port 8001
-   ```
-
-2. **Populate with sample data**
-   ```bash
-   python populate_db.py
-   ```
-
-3. **Login as admin** at http://localhost:8001/docs
-   - Use `admin@ecommerce.com` / `admin123`
-   - Get your access token
-
-4. **Try the API**
-   - Browse products and use the search endpoint
-   - Create products with brands and categories
-   - Set up price lists for different user groups
-   - Assign users to price lists
-   - Test the shopping cart and order flow
-   - View best-selling products analytics
-   - Configure store settings
 
 ## Key Features Deep Dive
 
@@ -344,6 +303,7 @@ curl "http://localhost:8001/api/v1/products/search/?q=laptop&limit=20"
 ```
 
 **Search Fields:**
+
 - Product name
 - Product description
 - Product SKU
@@ -352,6 +312,7 @@ curl "http://localhost:8001/api/v1/products/search/?q=laptop&limit=20"
 - Brand name
 
 **Performance Optimizations:**
+
 - Uses SQL JOINs for efficient querying
 - Eager loads relationships to prevent N+1 queries
 - Case-insensitive search with ILIKE
@@ -360,6 +321,7 @@ curl "http://localhost:8001/api/v1/products/search/?q=laptop&limit=20"
 ### 📦 Advanced Product Management
 
 Products include comprehensive fields for inventory and logistics:
+
 - **SKU & EAN**: Unique identifiers for inventory tracking
 - **Weight**: For shipping calculations
 - **Stock Management**: `is_always_in_stock` flag or quantity tracking
@@ -374,6 +336,7 @@ Products include comprehensive fields for inventory and logistics:
 Professional email subscription system with verification workflow:
 
 **Features:**
+
 - Email collection with validation
 - Token-based email verification
 - Professional HTML email templates
@@ -383,11 +346,13 @@ Professional email subscription system with verification workflow:
 - Admin dashboard for subscriber management
 
 **Email Templates:**
+
 - Verification email with branded styling
 - Welcome email after confirmation
 - Responsive HTML design
 
 **Setup:**
+
 ```bash
 # Configure SMTP in .env
 SMTP_HOST=smtp.gmail.com
@@ -405,6 +370,7 @@ Leave SMTP settings empty in `.env` and emails will be logged to console with ve
 ### 💰 Price List System
 
 Flexible pricing for different customer segments:
+
 - Create multiple price lists with custom names
 - Assign specific users to price lists
 - Override product prices per price list
@@ -425,6 +391,7 @@ The `/api/v1/best-selling/` endpoint demonstrates Redis caching:
 - **Cache Invalidation**: Admin endpoint to manually clear cache
 
 **Setup:**
+
 ```bash
 # Install Redis
 sudo apt install redis-server  # Ubuntu
@@ -437,20 +404,7 @@ REDIS_PORT=6379
 CACHE_TTL=300
 ```
 
-**Benefits:**
-- ⚡ 15x faster response times on cached queries
-- 📉 Reduced database load
-- 🔄 Automatic cache expiration
-- 🛡️ Works without Redis (automatic fallback)
-
 For detailed setup, monitoring, and extending caching to other endpoints, see [REDIS_SETUP.md](REDIS_SETUP.md).
-
-## Security
-
-- Passwords are hashed using bcrypt
-- JWT tokens for authentication
-- Role-based access control (user/admin)
-- CORS protection
 
 ## License
 
