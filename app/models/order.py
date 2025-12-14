@@ -23,6 +23,8 @@ class Order(Base):
     status = Column(Enum(OrderStatus), default=OrderStatus.PENDING)
     shipping_address = Column(String, nullable=False)
     payment_id = Column(String)
+    replacement_criterion = Column(String, nullable=True)
+    comment = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

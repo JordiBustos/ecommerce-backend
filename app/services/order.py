@@ -182,11 +182,8 @@ class OrderService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error saving file: {str(e)}")
 
-        # Create new PaymentReceipt record
         payment_receipt = PaymentReceipt(
-            order_id=order.id,
-            file_path=str(file_path),
-            file_type=file.content_type
+            order_id=order.id, file_path=str(file_path), file_type=file.content_type
         )
         db.add(payment_receipt)
         db.commit()
@@ -197,25 +194,23 @@ class OrderService:
     @staticmethod
     def delete_receipt(db: Session, receipt_id: int, user: User) -> None:
         """Delete a payment receipt"""
-        receipt = db.query(PaymentReceipt).filter(PaymentReceipt.id == receipt_id).first()
+        receipt = (
+            db.query(PaymentReceipt).filter(PaymentReceipt.id == receipt_id).first()
+        )
         if not receipt:
             raise HTTPException(status_code=404, detail="Receipt not found")
-        
-        # Get the order to check ownership
+
         order = db.query(Order).filter(Order.id == receipt.order_id).first()
         if not order or (order.user_id != user.id and not user.is_superuser):
             raise HTTPException(
-                status_code=403,
-                detail="Not authorized to delete this receipt"
+                status_code=403, detail="Not authorized to delete this receipt"
             )
-        
-        # Delete the physical file
+
         if os.path.exists(receipt.file_path):
             try:
                 os.remove(receipt.file_path)
             except Exception:
-                pass  # Continue even if file deletion fails
-        
-        # Delete the database record
+                pass
+
         db.delete(receipt)
         db.commit()

@@ -36,6 +36,8 @@ class PaymentReceipt(BaseModel):
 
 class OrderBase(BaseModel):
     shipping_address: str
+    replacement_criterion: Optional[str] = None
+    comment: Optional[str] = None
 
 
 class OrderCreate(OrderBase):
@@ -45,6 +47,8 @@ class OrderCreate(OrderBase):
 class OrderUpdate(BaseModel):
     status: Optional[OrderStatus] = None
     shipping_address: Optional[str] = None
+    replacement_criterion: Optional[str] = None
+    comment: Optional[str] = None
 
 
 class Order(OrderBase):
