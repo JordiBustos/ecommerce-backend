@@ -35,8 +35,7 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 - ⚡ **Redis Caching**: Optional Redis integration for improved performance on frequently accessed data
 - 🏪 **Store Settings**: Customizable store configuration (colors, address, hours, contact)
 - � **Newsletter**: Email subscription system with verification workflow
-- 📨 **Email Service**: Professional HTML emails with SMTP support (Gmail, SendGrid, Mailgun, etc.)
-- �📊 **Admin Panel**: Admin endpoints for managing users, products, orders, and price lists
+- 📨 **Email Service**: Professional HTML emails with SMTP support (Gmail, SendGrid, Mailgun, etc.)- 📥 **CSV Import**: Bulk product import from CSV files with batch processing (50 products per batch)- �📊 **Admin Panel**: Admin endpoints for managing users, products, orders, and price lists
 
 ## Tech Stack
 
@@ -147,6 +146,7 @@ After running `populate_db.py`:
 - `GET /api/v1/products/search/` - **Search products** (multi-field: name, description, SKU, EAN, category, brand)
 - `GET /api/v1/products/{id}` - Get product details
 - `POST /api/v1/products/` - Create product (admin)
+- `POST /api/v1/products/import/csv` - **Import products from CSV** (admin) - Batch processing (50 per batch)
 - `PUT /api/v1/products/{id}` - Update product (admin)
 - `DELETE /api/v1/products/{id}` - Delete product (admin)
 
@@ -401,8 +401,6 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 CACHE_TTL=300
 ```
-
-For detailed setup, monitoring, and extending caching to other endpoints, see [REDIS_SETUP.md](REDIS_SETUP.md).
 
 ## License
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
@@ -115,3 +115,17 @@ class Product(ProductBase):
 
     class Config:
         from_attributes = True
+
+
+class CSVImportError(BaseModel):
+    row: int
+    data: Dict[str, Any]
+    error: str
+
+
+class CSVImportResult(BaseModel):
+    total_rows: int
+    successful: int
+    failed: int
+    errors: List[CSVImportError] = []
+    message: str

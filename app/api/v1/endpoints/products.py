@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from app.api.deps import get_current_superuser
@@ -15,6 +15,7 @@ from app.schemas.product import (
     Brand as BrandSchema,
     BrandCreate,
     BrandUpdate,
+    CSVImportResult,
 )
 from app.services.product import CategoryService, ProductService, BrandService
 
@@ -79,10 +80,12 @@ def create_category(
 
 @router.get("/categories", response_model=List[CategorySchema])
 def read_categories(
-    skip: int = 0, 
-    limit: int = 100, 
-    parent_only: bool = Query(default=False, description="Only return parent categories"),
-    db: Session = Depends(get_db)
+    skip: int = 0,
+    limit: int = 100,
+    parent_only: bool = Query(
+        default=False, description="Only return parent categories"
+    ),
+    db: Session = Depends(get_db),
 ):
     """Get all categories, optionally filter to parent categories only"""
     return CategoryService.get_categories(db, skip, limit, parent_only)
@@ -94,7 +97,9 @@ def read_category(category_id: int, db: Session = Depends(get_db)):
     return CategoryService.get_category(db, category_id)
 
 
-@router.get("/categories/{category_id}/subcategories", response_model=List[CategorySchema])
+@router.get(
+    "/categories/{category_id}/subcategories", response_model=List[CategorySchema]
+)
 def read_subcategories(category_id: int, db: Session = Depends(get_db)):
     """Get all subcategories of a category"""
     return CategoryService.get_subcategories(db, category_id)
@@ -176,6 +181,16 @@ def update_product(
     return ProductService.update_product(db, product_id, product_in)
 
 
+@router.delete("/all", status_code=200)
+def delete_all_products(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser),
+):
+    """Delete all products from database (admin only)"""
+    count = ProductService.delete_all_products(db)
+    return {"message": f"Successfully deleted {count} products"}
+
+
 @router.delete("/{product_id}", status_code=204)
 def delete_product(
     product_id: int,
@@ -185,3 +200,61 @@ def delete_product(
     """Delete product (admin only)"""
     ProductService.delete_product(db, product_id)
     return None
+
+
+@router.post("/import/csv", response_model=CSVImportResult)
+async def import_products_csv(
+    file: UploadFile = File(...),
+    batch_size: int = Query(
+        50, ge=1, le=200, description="Number of products to process per batch"
+    ),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_superuser),
+):
+    """
+    Import products from CSV file (admin only).
+
+    Processes products in batches of 50 (configurable).
+
+    **Categories and Brands**: Use names instead of IDs. If a category or brand doesn't exist,
+    it will be automatically created with other fields empty.
+
+    Expected CSV format:
+    ```
+    name,price,category,slug,sku,ean,description,stock,is_always_in_stock,max_per_buy,weight,units_per_package,brand,image_url,is_active
+    Product Name,19.99,Electronics,product-slug,SKU123,1234567890123,Description here,100,false,10,0.5,1,Logitech,https://example.com/image.jpg,true
+    ```
+
+    Required fields:
+    - name: Product name
+    - price: Product price (numeric)
+    - category: Category name (will be created if doesn't exist)
+    - slug: URL-friendly unique identifier
+
+    Optional fields:
+    - sku: Stock Keeping Unit (unique if provided)
+    - ean: European Article Number (unique if provided)
+    - description: Product description
+    - stock: Stock quantity (default: 0)
+    - is_always_in_stock: true/false (default: false)
+    - max_per_buy: Maximum units per purchase (integer)
+    - weight: Product weight (numeric)
+    - units_per_package: Units per package (default: 1)
+    - brand: Brand name (will be created if doesn't exist)
+    - image_url: Product image URL
+    - is_active: true/false (default: true)
+
+    Returns:
+    - total_rows: Total number of rows processed
+    - successful: Number of successfully imported products
+    - failed: Number of failed imports
+    - errors: List of errors with row number and details
+    - message: Summary message
+    """
+    # Validate file type
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(
+            status_code=400, detail="Invalid file type. Please upload a CSV file."
+        )
+
+    return ProductService.import_products_from_csv(db, file.file, batch_size)

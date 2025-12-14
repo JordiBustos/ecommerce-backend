@@ -1,7 +1,9 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, BinaryIO
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_
 from fastapi import HTTPException
+import csv
+import io
 from app.models.product import Product, Category, Brand
 from app.schemas.product import (
     ProductCreate,
@@ -10,6 +12,8 @@ from app.schemas.product import (
     CategoryUpdate,
     BrandCreate,
     BrandUpdate,
+    CSVImportResult,
+    CSVImportError,
 )
 
 
@@ -19,8 +23,10 @@ class BrandService:
         """Create a new brand"""
         existing = db.query(Brand).filter(Brand.slug == brand_in.slug).first()
         if existing:
-            raise HTTPException(status_code=400, detail="Brand with this slug already exists")
-        
+            raise HTTPException(
+                status_code=400, detail="Brand with this slug already exists"
+            )
+
         brand = Brand(**brand_in.model_dump())
         db.add(brand)
         db.commit()
@@ -65,13 +71,17 @@ class CategoryService:
         """Create a new category or subcategory"""
         existing = db.query(Category).filter(Category.slug == category_in.slug).first()
         if existing:
-            raise HTTPException(status_code=400, detail="Category with this slug already exists")
-        
+            raise HTTPException(
+                status_code=400, detail="Category with this slug already exists"
+            )
+
         if category_in.parent_id:
-            parent = db.query(Category).filter(Category.id == category_in.parent_id).first()
+            parent = (
+                db.query(Category).filter(Category.id == category_in.parent_id).first()
+            )
             if not parent:
                 raise HTTPException(status_code=404, detail="Parent category not found")
-        
+
         category = Category(**category_in.model_dump())
         db.add(category)
         db.commit()
@@ -79,7 +89,9 @@ class CategoryService:
         return category
 
     @staticmethod
-    def get_categories(db: Session, skip: int = 0, limit: int = 100, parent_only: bool = False) -> List[Category]:
+    def get_categories(
+        db: Session, skip: int = 0, limit: int = 100, parent_only: bool = False
+    ) -> List[Category]:
         """Get all categories with pagination"""
         query = db.query(Category)
         if parent_only:
@@ -93,7 +105,7 @@ class CategoryService:
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
         return category
-    
+
     @staticmethod
     def get_subcategories(db: Session, category_id: int) -> List[Category]:
         """Get all subcategories of a category"""
@@ -195,6 +207,14 @@ class ProductService:
         db.commit()
 
     @staticmethod
+    def delete_all_products(db: Session) -> int:
+        """Delete all products from database. Returns count of deleted products."""
+        count = db.query(Product).count()
+        db.query(Product).delete()
+        db.commit()
+        return count
+
+    @staticmethod
     def search_products(
         db: Session,
         query: str,
@@ -206,7 +226,7 @@ class ProductService:
         Searches in: product name, description, SKU, EAN, category name, brand name
         """
         search_term = f"%{query}%"
-        
+
         # Build query with eager loading to avoid N+1 queries
         products_query = (
             db.query(Product)
@@ -226,5 +246,235 @@ class ProductService:
             .options(joinedload(Product.category), joinedload(Product.brand))
             .distinct()
         )
-        
+
         return products_query.offset(skip).limit(limit).all()
+
+    @staticmethod
+    def import_products_from_csv(
+        db: Session, csv_file: BinaryIO, batch_size: int = 50
+    ) -> CSVImportResult:
+        """
+        Import products from CSV file in batches.
+
+        Expected CSV columns:
+        - sku (optional)
+        - ean (optional)
+        - name (required)
+        - description (optional)
+        - price (required)
+        - stock (optional, default: 0)
+        - is_always_in_stock (optional, default: false)
+        - max_per_buy (optional)
+        - weight (optional)
+        - units_per_package (optional, default: 1)
+        - category (required) - category name, will be created if doesn't exist
+        - brand (optional) - brand name, will be created if doesn't exist
+        - image_url (optional)
+        - slug (required)
+        - is_active (optional, default: true)
+        """
+        errors: List[CSVImportError] = []
+        successful = 0
+        total_rows = 0
+
+        category_cache: Dict[str, int] = {}
+        brand_cache: Dict[str, int] = {}
+
+        try:
+            content = csv_file.read()
+            csv_text = content.decode("utf-8")
+            csv_reader = csv.DictReader(io.StringIO(csv_text))
+
+            required_columns = {"name", "price", "category", "slug"}
+            if csv_reader.fieldnames:
+                missing_columns = required_columns - set(csv_reader.fieldnames)
+                if missing_columns:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Missing required columns: {', '.join(missing_columns)}",
+                    )
+
+            batch = []
+            for row_num, row in enumerate(csv_reader, start=2):
+                total_rows += 1
+
+                try:
+                    category_name = row["category"].strip()
+                    if not category_name:
+                        raise ValueError("Category name cannot be empty")
+
+                    if category_name not in category_cache:
+                        category = (
+                            db.query(Category)
+                            .filter(Category.name == category_name)
+                            .first()
+                        )
+
+                        if not category:
+                            category_slug = (
+                                category_name.lower()
+                                .replace(" ", "-")
+                                .replace("_", "-")
+                            )
+                            base_slug = category_slug
+                            counter = 1
+                            while (
+                                db.query(Category)
+                                .filter(Category.slug == category_slug)
+                                .first()
+                            ):
+                                category_slug = f"{base_slug}-{counter}"
+                                counter += 1
+
+                            category = Category(
+                                name=category_name,
+                                slug=category_slug,
+                                description=None,
+                                parent_id=None,
+                            )
+                            db.add(category)
+                            db.flush()
+
+                        category_cache[category_name] = category.id
+
+                    category_id = category_cache[category_name]
+
+                    brand_id = None
+                    brand_name = row.get("brand", "").strip()
+                    if brand_name:
+                        if brand_name not in brand_cache:
+                            brand = (
+                                db.query(Brand).filter(Brand.name == brand_name).first()
+                            )
+
+                            if not brand:
+                                brand_slug = (
+                                    brand_name.lower()
+                                    .replace(" ", "-")
+                                    .replace("_", "-")
+                                )
+                                base_slug = brand_slug
+                                counter = 1
+                                while (
+                                    db.query(Brand)
+                                    .filter(Brand.slug == brand_slug)
+                                    .first()
+                                ):
+                                    brand_slug = f"{base_slug}-{counter}"
+                                    counter += 1
+
+                                brand = Brand(
+                                    name=brand_name, slug=brand_slug, description=None
+                                )
+                                db.add(brand)
+                                db.flush()
+
+                            brand_cache[brand_name] = brand.id
+
+                        brand_id = brand_cache[brand_name]
+
+                    product_data = {
+                        "name": row["name"].strip(),
+                        "price": float(row["price"]),
+                        "category_id": category_id,
+                        "slug": row["slug"].strip(),
+                        "sku": row.get("sku", "").strip() or None,
+                        "ean": row.get("ean", "").strip() or None,
+                        "description": row.get("description", "").strip() or None,
+                        "stock": int(row.get("stock", 0)),
+                        "is_always_in_stock": row.get(
+                            "is_always_in_stock", "false"
+                        ).lower()
+                        in ("true", "1", "yes"),
+                        "max_per_buy": (
+                            int(row["max_per_buy"]) if row.get("max_per_buy") else None
+                        ),
+                        "weight": float(row["weight"]) if row.get("weight") else None,
+                        "units_per_package": int(row.get("units_per_package", 1)),
+                        "brand_id": brand_id,
+                        "image_url": row.get("image_url", "").strip() or None,
+                        "is_active": row.get("is_active", "true").lower()
+                        in ("true", "1", "yes"),
+                    }
+
+                    if product_data["sku"]:
+                        existing_sku = (
+                            db.query(Product)
+                            .filter(Product.sku == product_data["sku"])
+                            .first()
+                        )
+                        if existing_sku:
+                            raise ValueError(
+                                f"Product with SKU '{product_data['sku']}' already exists"
+                            )
+
+                    if product_data["ean"]:
+                        existing_ean = (
+                            db.query(Product)
+                            .filter(Product.ean == product_data["ean"])
+                            .first()
+                        )
+                        if existing_ean:
+                            raise ValueError(
+                                f"Product with EAN '{product_data['ean']}' already exists"
+                            )
+
+                    existing_slug = (
+                        db.query(Product)
+                        .filter(Product.slug == product_data["slug"])
+                        .first()
+                    )
+                    if existing_slug:
+                        raise ValueError(
+                            f"Product with slug '{product_data['slug']}' already exists"
+                        )
+
+                    batch.append(Product(**product_data))
+
+                    if len(batch) >= batch_size:
+                        db.add_all(batch)
+                        db.commit()
+                        successful += len(batch)
+                        batch = []
+
+                except (ValueError, KeyError) as e:
+                    errors.append(
+                        CSVImportError(row=row_num, data=dict(row), error=str(e))
+                    )
+                except Exception as e:
+                    errors.append(
+                        CSVImportError(
+                            row=row_num,
+                            data=dict(row),
+                            error=f"Unexpected error: {str(e)}",
+                        )
+                    )
+
+            if batch:
+                db.add_all(batch)
+                db.commit()
+                successful += len(batch)
+
+        except UnicodeDecodeError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid file encoding. Please use UTF-8 encoded CSV file.",
+            )
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=500, detail=f"Error processing CSV file: {str(e)}"
+            )
+
+        failed = len(errors)
+        message = f"Import completed: {successful} products imported successfully"
+        if failed > 0:
+            message += f", {failed} products failed"
+
+        return CSVImportResult(
+            total_rows=total_rows,
+            successful=successful,
+            failed=failed,
+            errors=errors,
+            message=message,
+        )

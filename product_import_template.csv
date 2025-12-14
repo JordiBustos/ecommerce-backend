@@ -1,0 +1,51 @@
+name,price,category,slug,sku,ean,description,stock,is_always_in_stock,max_per_buy,weight,units_per_package,brand,image_url,is_active
+"Wireless Mouse",19.99,Electronics,wireless-mouse,SKU-001,789000000001,"Ergonomic wireless mouse",120,0,5,0.2,1,Logitech,https://example.com/img/1.jpg,1
+"Mechanical Keyboard",85.50,Electronics,mechanical-keyboard,SKU-002,789000000002,"RGB mechanical keyboard",60,0,2,1.1,1,Logitech,https://example.com/img/2.jpg,1
+"USB-C Charger 65W",45.00,Electronics,usb-c-charger-65w,SKU-003,789000000003,"Fast USB-C charger",0,1,10,0.3,1,Anker,https://example.com/img/3.jpg,1
+"Bluetooth Headphones",120.99,Audio,bluetooth-headphones,SKU-004,789000000004,"Noise cancelling headphones",40,0,1,0.9,1,Sony,https://example.com/img/4.jpg,1
+"Laptop Stand",32.00,Accessories,laptop-stand,SKU-005,789000000005,"Adjustable aluminum stand",90,0,3,0.8,1,Generic,https://example.com/img/5.jpg,1
+"HDMI Cable 2m",8.99,Cables,hdmi-cable-2m,SKU-006,789000000006,"High speed HDMI cable",300,0,10,0.15,1,Anker,https://example.com/img/6.jpg,1
+"USB Flash Drive 32GB",12.50,Storage,usb-flash-drive-32gb,SKU-007,789000000007,"32GB USB 3.0 drive",200,0,5,0.05,1,SanDisk,https://example.com/img/7.jpg,1
+"USB Flash Drive 64GB",18.00,Storage,usb-flash-drive-64gb,SKU-008,789000000008,"64GB USB 3.0 drive",180,0,5,0.05,1,SanDisk,https://example.com/img/8.jpg,1
+"Gaming Mouse Pad",14.99,Gaming,gaming-mouse-pad,SKU-009,789000000009,"Large gaming mouse pad",140,0,3,0.4,1,Razer,https://example.com/img/9.jpg,1
+"Webcam Full HD",59.00,Electronics,webcam-full-hd,SKU-010,789000000010,"1080p USB webcam",70,0,2,0.25,1,Logitech,https://example.com/img/10.jpg,1
+"Portable SSD 500GB",89.90,Storage,portable-ssd-500gb,SKU-011,789000000011,"High speed portable SSD",55,0,1,0.2,1,Samsung,https://example.com/img/11.jpg,1
+"Portable SSD 1TB",145.00,Storage,portable-ssd-1tb,SKU-012,789000000012,"1TB portable SSD",40,0,1,0.2,1,Samsung,https://example.com/img/12.jpg,1
+"Wireless Router",110.00,Networking,wireless-router,SKU-013,789000000013,"Dual band WiFi router",65,0,2,0.6,1,TP-Link,https://example.com/img/13.jpg,1
+"Ethernet Cable 5m",6.50,Cables,ethernet-cable-5m,SKU-014,789000000014,"Cat6 Ethernet cable",250,0,10,0.2,1,Anker,https://example.com/img/14.jpg,1
+"Smart Plug",22.99,Smart Home,smart-plug,SKU-015,789000000015,"WiFi smart plug",130,0,5,0.18,1,TP-Link,https://example.com/img/15.jpg,1
+"Smart Bulb",18.75,Smart Home,smart-bulb,SKU-016,789000000016,"RGB smart bulb",160,0,6,0.25,1,Philips,https://example.com/img/16.jpg,1
+"Tablet 10 inch",210.00,Tablets,tablet-10-inch,SKU-017,789000000017,"10 inch Android tablet",35,0,1,0.9,1,Samsung,https://example.com/img/17.jpg,1
+"Phone Stand",9.99,Accessories,phone-stand,SKU-018,789000000018,"Adjustable phone stand",220,0,5,0.12,1,Generic,https://example.com/img/18.jpg,1
+"Power Bank 20000mAh",49.00,Charging,power-bank-20000mah,SKU-019,789000000019,"High capacity power bank",85,0,2,0.45,1,Anker,https://example.com/img/19.jpg,1
+"Wireless Charger",29.90,Charging,wireless-charger,SKU-020,789000000020,"Fast wireless charger",100,0,3,0.3,1,Belkin,https://example.com/img/20.jpg,1
+"Smart Watch",135.00,Wearables,smart-watch,SKU-021,789000000021,"Fitness smart watch",50,0,1,0.2,1,Xiaomi,https://example.com/img/21.jpg,1
+"Fitness Band",55.00,Wearables,fitness-band,SKU-022,789000000022,"Fitness tracking band",95,0,2,0.1,1,Xiaomi,https://example.com/img/22.jpg,1
+"Noise Cancelling Earbuds",99.00,Audio,noise-cancelling-earbuds,SKU-023,789000000023,"ANC true wireless earbuds",60,0,1,0.15,1,Sony,https://example.com/img/23.jpg,1
+"Desk Lamp LED",27.50,Lighting,desk-lamp-led,SKU-024,789000000024,"LED desk lamp",110,0,3,0.7,1,Philips,https://example.com/img/24.jpg,1
+"Graphic Tablet",75.00,Accessories,graphic-tablet,SKU-025,789000000025,"Drawing tablet for designers",45,0,1,0.6,1,Wacom,https://example.com/img/25.jpg,1
+"External DVD Drive",34.90,Storage,external-dvd-drive,SKU-026,789000000026,"USB external DVD drive",70,0,2,0.5,1,LG,https://example.com/img/26.jpg,1
+"Micro SD Card 128GB",22.00,Storage,micro-sd-128gb,SKU-027,789000000027,"128GB micro SD card",190,0,5,0.02,1,SanDisk,https://example.com/img/27.jpg,1
+"Micro SD Card 256GB",39.00,Storage,micro-sd-256gb,SKU-028,789000000028,"256GB micro SD card",130,0,5,0.02,1,SanDisk,https://example.com/img/28.jpg,1
+"Gaming Chair",220.00,Furniture,gaming-chair,SKU-029,789000000029,"Ergonomic gaming chair",20,0,1,18.0,1,Secretlab,https://example.com/img/29.jpg,1
+"Office Chair",180.00,Furniture,office-chair,SKU-030,789000000030,"Comfortable office chair",25,0,1,15.0,1,Herman Miller,https://example.com/img/30.jpg,1
+"Monitor 24 inch",199.00,Monitors,monitor-24-inch,SKU-031,789000000031,"24 inch Full HD monitor",30,0,1,4.5,1,Dell,https://example.com/img/31.jpg,1
+"Monitor 27 inch",279.00,Monitors,monitor-27-inch,SKU-032,789000000032,"27 inch QHD monitor",22,0,1,5.5,1,Dell,https://example.com/img/32.jpg,1
+"Keyboard Wrist Rest",11.99,Accessories,keyboard-wrist-rest,SKU-033,789000000033,"Memory foam wrist rest",160,0,4,0.3,1,HyperX,https://example.com/img/33.jpg,1
+"Mouse Bungee",13.50,Gaming,mouse-bungee,SKU-034,789000000034,"Gaming mouse bungee",140,0,3,0.25,1,Razer,https://example.com/img/34.jpg,1
+"Surge Protector",21.00,Power,surge-protector,SKU-035,789000000035,"6 outlet surge protector",120,0,3,0.6,1,Belkin,https://example.com/img/35.jpg,1
+"UPS 1200VA",155.00,Power,ups-1200va,SKU-036,789000000036,"Backup power UPS",18,0,1,9.0,1,APC,https://example.com/img/36.jpg,1
+"Network Switch 8 Port",39.99,Networking,network-switch-8-port,SKU-037,789000000037,"8 port gigabit switch",70,0,2,0.7,1,TP-Link,https://example.com/img/37.jpg,1
+"Network Switch 16 Port",69.99,Networking,network-switch-16-port,SKU-038,789000000038,"16 port gigabit switch",45,0,2,1.1,1,TP-Link,https://example.com/img/38.jpg,1
+"VR Headset",320.00,Gaming,vr-headset,SKU-039,789000000039,"Virtual reality headset",15,0,1,2.5,1,Meta,https://example.com/img/39.jpg,1
+"Game Controller",49.99,Gaming,game-controller,SKU-040,789000000040,"Wireless game controller",85,0,2,0.35,1,Xbox,https://example.com/img/40.jpg,1
+"Streaming Microphone",89.00,Audio,streaming-microphone,SKU-041,789000000041,"USB condenser microphone",55,0,1,0.6,1,Blue Yeti,https://example.com/img/41.jpg,1
+"Tripod Stand",24.99,Photography,tripod-stand,SKU-042,789000000042,"Adjustable tripod stand",100,0,3,0.9,1,Manfrotto,https://example.com/img/42.jpg,1
+"Ring Light",34.50,Photography,ring-light,SKU-043,789000000043,"LED ring light",90,0,2,1.2,1,Neewer,https://example.com/img/43.jpg,1
+"Action Camera",150.00,Cameras,action-camera,SKU-044,789000000044,"4K action camera",28,0,1,0.4,1,GoPro,https://example.com/img/44.jpg,1
+"Camera Mount",14.00,Photography,camera-mount,SKU-045,789000000045,"Universal camera mount",130,0,4,0.15,1,Generic,https://example.com/img/45.jpg,1
+"Car Phone Holder",16.99,Automotive,car-phone-holder,SKU-046,789000000046,"Car dashboard phone holder",150,0,3,0.2,1,iOttie,https://example.com/img/46.jpg,1
+"Bluetooth Speaker",65.00,Audio,bluetooth-speaker,SKU-047,789000000047,"Portable Bluetooth speaker",75,0,2,0.8,1,JBL,https://example.com/img/47.jpg,1
+"Smart Scale",42.00,Health,smart-scale,SKU-048,789000000048,"Bluetooth smart scale",60,0,1,1.6,1,Withings,https://example.com/img/48.jpg,1
+"Digital Alarm Clock",19.50,Home,digital-alarm-clock,SKU-049,789000000049,"LED digital alarm clock",110,0,3,0.5,1,Philips,https://example.com/img/49.jpg,1
+"Desk Organizer",12.99,Office,desk-organizer,SKU-050,789000000050,"Office desk organizer",140,0,5,0.4,1,Generic,https://example.com/img/50.jpg,1
