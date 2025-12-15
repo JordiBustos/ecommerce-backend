@@ -5,25 +5,35 @@ from app.models.cart import CartItem
 from app.models.product import Product
 from app.models.user import User
 from app.schemas.cart import Cart, CartItemCreate, CartItemUpdate
+from app.services.product_validator import ProductValidator
+from app.services.price_calculator import PriceCalculator
 
 
 class CartService:
     @staticmethod
     def get_user_cart(db: Session, user: User) -> Cart:
-        """Get user's shopping cart"""
+        """
+        Get user's shopping cart with calculated prices.
+        Uses PriceCalculator to apply user-specific pricing.
+        """
         cart_items = db.query(CartItem).filter(CartItem.user_id == user.id).all()
-        total = sum(item.product.price * item.quantity for item in cart_items)
+        
+        # Calculate total using PriceCalculator for user-specific pricing
+        items_for_calc = [(item.product, item.quantity) for item in cart_items]
+        total = PriceCalculator.calculate_cart_total(items_for_calc, user, db)
+        
         return Cart(items=cart_items, total=total)
 
     @staticmethod
     def add_item_to_cart(db: Session, user: User, item_in: CartItemCreate) -> Cart:
-        """Add item to cart or update quantity if already exists"""
-        product = db.query(Product).filter(Product.id == item_in.product_id).first()
-        if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
-
-        if not product.is_always_in_stock and product.stock < item_in.quantity:
-            raise HTTPException(status_code=400, detail="Insufficient stock")
+        """
+        Add item to cart or update quantity if already exists.
+        Uses ProductValidator for validation (Strategy pattern).
+        """
+        # Validate product and quantity using ProductValidator
+        product = ProductValidator.validate_product_and_quantity(
+            db, item_in.product_id, item_in.quantity, context="cart"
+        )
 
         existing_item = (
             db.query(CartItem)
@@ -34,15 +44,11 @@ class CartService:
         )
 
         if existing_item:
-            new_quantity = existing_item.quantity + item_in.quantity
-            if product.stock < new_quantity:
-                raise HTTPException(status_code=400, detail="Insufficient stock")
-            if new_quantity > product.max_per_buy:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"You already have the maximum of units of this product",
-                )
-            existing_item.quantity = new_quantity
+            # Validate that adding this quantity won't exceed limits
+            ProductValidator.validate_can_add_quantity(
+                product, existing_item.quantity, item_in.quantity
+            )
+            existing_item.quantity += item_in.quantity
         else:
             cart_item = CartItem(
                 user_id=user.id,
@@ -59,7 +65,10 @@ class CartService:
     def update_cart_item(
         db: Session, user: User, item_id: int, item_update: CartItemUpdate
     ) -> Cart:
-        """Update cart item quantity"""
+        """
+        Update cart item quantity.
+        Uses ProductValidator for validation.
+        """
         cart_item = (
             db.query(CartItem)
             .filter(CartItem.id == item_id, CartItem.user_id == user.id)
@@ -69,14 +78,8 @@ class CartService:
         if not cart_item:
             raise HTTPException(status_code=404, detail="Cart item not found")
 
-        if not cart_item.product.is_always_in_stock and cart_item.product.stock < item_update.quantity:
-            raise HTTPException(status_code=400, detail="Insufficient stock")
-        
-        if item_update.quantity > cart_item.product.max_per_buy:
-            raise HTTPException(
-                status_code=400,
-                detail=f"You cannot have more than {cart_item.product.max_per_buy} units of this product",
-            )
+        # Validate new quantity using ProductValidator
+        ProductValidator.validate_for_cart(cart_item.product, item_update.quantity)
 
         cart_item.quantity = item_update.quantity
         db.commit()

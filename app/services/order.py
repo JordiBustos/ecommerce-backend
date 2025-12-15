@@ -11,6 +11,8 @@ from app.models.user import User
 from app.models.address import Address
 from app.models.physical_store import PhysicalStore
 from app.schemas.order import OrderCreate, OrderUpdate
+from app.services.product_validator import ProductValidator
+from app.services.price_calculator import PriceCalculator
 
 
 class OrderService:
@@ -73,32 +75,25 @@ class OrderService:
         total_amount = 0
         order_items_data = []
 
+        # Validate all items using ProductValidator (Chain of Responsibility pattern)
         for item in order_in.items:
-            product = db.query(Product).filter(Product.id == item.product_id).first()
-            if not product:
-                raise HTTPException(
-                    status_code=404, detail=f"Product {item.product_id} not found"
-                )
+            # Validate product and quantity using ProductValidator
+            product = ProductValidator.validate_product_and_quantity(
+                db, item.product_id, item.quantity, context="order"
+            )
 
-            if not product.is_always_in_stock and product.stock < item.quantity:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Insufficient stock for product {product.name}",
-                )
+            # Calculate price using PriceCalculator with user-specific pricing
+            item_price = PriceCalculator.get_product_price(product, user, db)
+            item_total = PriceCalculator.calculate_item_total(
+                product, item.quantity, user, db
+            )
 
-            if item.quantity > product.max_per_buy:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Cannot purchase more than {product.max_per_buy} units of {product.name}",
-                )
-
-            item_total = product.price * item.quantity
             total_amount += item_total
             order_items_data.append(
                 {
                     "product_id": product.id,
                     "quantity": item.quantity,
-                    "price": product.price,
+                    "price": item_price,
                 }
             )
 
@@ -132,10 +127,9 @@ class OrderService:
             order_item = OrderItem(order_id=db_order.id, **item_data)
             db.add(order_item)
 
-            product = (
-                db.query(Product).filter(Product.id == item_data["product_id"]).first()
-            )
-            product.stock -= item_data["quantity"]
+            product = ProductValidator.get_product_or_404(db, item_data["product_id"])
+            if not product.is_always_in_stock:
+                product.stock -= item_data["quantity"]
 
         db.query(CartItem).filter(CartItem.user_id == user.id).delete()
 
