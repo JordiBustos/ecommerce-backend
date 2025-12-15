@@ -70,7 +70,7 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 2. **Create virtual environment**
 
    ```bash
-   python -m venv venv
+   python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
@@ -97,7 +97,7 @@ HTTP Layer (Routers) → Service Layer (Business Logic) → Database Layer (Mode
 6. **Populate database with sample data** (optional)
 
    ```bash
-   python populate_db.py
+   python3 populate_db.py
    ```
 
    This will create:
@@ -272,7 +272,7 @@ See `.env.example` for all available configuration options:
 ### Populate database with sample data
 
 ```bash
-python populate_db.py
+python3 populate_db.py
 ```
 
 ### Create database migration
