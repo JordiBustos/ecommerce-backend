@@ -31,3 +31,13 @@ class CartItem(CartItemBase):
 class Cart(BaseModel):
     items: List[CartItem]
     total: float
+
+
+class UserCart(BaseModel):
+    """Cart with user information for admin view"""
+    user_id: int
+    username: str
+    email: str
+    items: List[CartItem]
+    total: float
+    items_count: int

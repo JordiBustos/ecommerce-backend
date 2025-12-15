@@ -106,3 +106,43 @@ class CartService:
         """Clear all items from user's cart"""
         db.query(CartItem).filter(CartItem.user_id == user.id).delete()
         db.commit()
+
+    @staticmethod
+    def get_all_carts(db: Session, admin_user: User, skip: int = 0, limit: int = 100) -> List[dict]:
+        """
+        Get all user carts (admin only).
+        Returns list of carts with user information.
+        """
+        if not admin_user.is_superuser:
+            raise HTTPException(
+                status_code=403, detail="Not authorized to view all carts"
+            )
+        
+        # Get all users who have items in their cart
+        users_with_carts = (
+            db.query(User)
+            .join(CartItem, User.id == CartItem.user_id)
+            .distinct()
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+        
+        all_carts = []
+        for user in users_with_carts:
+            cart_items = db.query(CartItem).filter(CartItem.user_id == user.id).all()
+            
+            # Calculate total using PriceCalculator
+            items_for_calc = [(item.product, item.quantity) for item in cart_items]
+            total = PriceCalculator.calculate_cart_total(items_for_calc, user, db)
+            
+            all_carts.append({
+                "user_id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "items": cart_items,
+                "total": total,
+                "items_count": len(cart_items)
+            })
+        
+        return all_carts

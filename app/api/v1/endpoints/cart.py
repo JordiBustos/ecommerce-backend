@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from app.api.deps import get_current_active_user
+from typing import List
+from app.api.deps import get_current_active_user, get_current_superuser
 from app.db.base import get_db
 from app.models.user import User
-from app.schemas.cart import Cart, CartItemCreate, CartItemUpdate
+from app.schemas.cart import Cart, CartItemCreate, CartItemUpdate, UserCart
 from app.services.cart import CartService
 
 router = APIRouter()
@@ -56,3 +57,14 @@ def clear_cart(
     """Clear all items from cart"""
     CartService.clear_cart(db, current_user)
     return None
+
+
+@router.get("/all/admin", response_model=List[UserCart])
+def get_all_carts(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    current_user: User = Depends(get_current_superuser),
+    db: Session = Depends(get_db),
+):
+    """Get all user carts (admin only)"""
+    return CartService.get_all_carts(db, current_user, skip, limit)
