@@ -21,6 +21,7 @@ from app.models.address import Address
 from app.models.price_list import PriceList, PriceListItem
 from app.models.favorite import user_favorites
 from app.models.store import Store
+from app.models.physical_store import PhysicalStore
 from app.models.newsletter import NewsletterSubscriber
 
 # this is the Alembic Config object, which provides

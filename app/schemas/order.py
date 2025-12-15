@@ -35,13 +35,19 @@ class PaymentReceipt(BaseModel):
 
 
 class OrderBase(BaseModel):
-    shipping_address: str
+    shipping_address: Optional[str] = None  # Deprecated
+    address_id: Optional[int] = None
+    physical_store_id: Optional[int] = None
     replacement_criterion: Optional[str] = None
     comment: Optional[str] = None
 
 
-class OrderCreate(OrderBase):
+class OrderCreate(BaseModel):
+    address_id: Optional[int] = None  # For delivery to address
+    physical_store_id: Optional[int] = None  # For pickup at store
     items: List[OrderItemCreate]
+    replacement_criterion: Optional[str] = None
+    comment: Optional[str] = None
 
 
 class OrderUpdate(BaseModel):
@@ -54,11 +60,24 @@ class OrderUpdate(BaseModel):
 class Order(OrderBase):
     id: int
     user_id: int
+    address_id: Optional[int] = None
+    physical_store_id: Optional[int] = None
     total_amount: float
     status: OrderStatus
     payment_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    
+    # Address snapshot fields
+    snapshot_full_name: Optional[str] = None
+    snapshot_country: Optional[str] = None
+    snapshot_postal_code: Optional[str] = None
+    snapshot_province: Optional[str] = None
+    snapshot_city: Optional[str] = None
+    snapshot_address_line1: Optional[str] = None
+    snapshot_address_line2: Optional[str] = None
+    snapshot_phone_number: Optional[str] = None
+    
     items: List[OrderItem] = []
     receipts: List[PaymentReceipt] = []
 

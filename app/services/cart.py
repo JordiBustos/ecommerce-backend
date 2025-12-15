@@ -22,7 +22,7 @@ class CartService:
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
 
-        if product.stock < item_in.quantity:
+        if not product.is_always_in_stock and product.stock < item_in.quantity:
             raise HTTPException(status_code=400, detail="Insufficient stock")
 
         existing_item = (
@@ -37,6 +37,11 @@ class CartService:
             new_quantity = existing_item.quantity + item_in.quantity
             if product.stock < new_quantity:
                 raise HTTPException(status_code=400, detail="Insufficient stock")
+            if new_quantity > product.max_per_buy:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"You already have the maximum of units of this product",
+                )
             existing_item.quantity = new_quantity
         else:
             cart_item = CartItem(
@@ -64,8 +69,14 @@ class CartService:
         if not cart_item:
             raise HTTPException(status_code=404, detail="Cart item not found")
 
-        if cart_item.product.stock < item_update.quantity:
+        if not cart_item.product.is_always_in_stock and cart_item.product.stock < item_update.quantity:
             raise HTTPException(status_code=400, detail="Insufficient stock")
+        
+        if item_update.quantity > cart_item.product.max_per_buy:
+            raise HTTPException(
+                status_code=400,
+                detail=f"You cannot have more than {cart_item.product.max_per_buy} units of this product",
+            )
 
         cart_item.quantity = item_update.quantity
         db.commit()

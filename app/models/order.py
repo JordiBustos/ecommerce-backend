@@ -19,17 +19,32 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    address_id = Column(Integer, ForeignKey("addresses.id"), nullable=True)
+    physical_store_id = Column(Integer, ForeignKey("physical_stores.id"), nullable=True)
     total_amount = Column(Float, nullable=False)
     status = Column(Enum(OrderStatus), default=OrderStatus.PENDING)
-    shipping_address = Column(String, nullable=False)
+    shipping_address = Column(String, nullable=True)  # Deprecated, keeping for backward compatibility
     payment_id = Column(String)
     replacement_criterion = Column(String, nullable=True)
     comment = Column(String, nullable=True)
+    
+    # Address snapshot at order time (preserves data if user changes address later)
+    snapshot_full_name = Column(String, nullable=True)
+    snapshot_country = Column(String, nullable=True)
+    snapshot_postal_code = Column(String, nullable=True)
+    snapshot_province = Column(String, nullable=True)
+    snapshot_city = Column(String, nullable=True)
+    snapshot_address_line1 = Column(String, nullable=True)
+    snapshot_address_line2 = Column(String, nullable=True)
+    snapshot_phone_number = Column(String, nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     user = relationship("User", back_populates="orders")
+    address = relationship("Address")
+    physical_store = relationship("PhysicalStore")
     items = relationship("OrderItem", back_populates="order")
     receipts = relationship("PaymentReceipt", back_populates="order", cascade="all, delete-orphan")
 

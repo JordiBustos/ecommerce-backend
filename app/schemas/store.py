@@ -30,6 +30,15 @@ class StoreBase(BaseModel):
     instagram_url: Optional[str] = None
     twitter_url: Optional[str] = None
     linkedin_url: Optional[str] = None
+    bank_name: Optional[str] = None
+    account_number: Optional[str] = None
+    cbu: Optional[str] = None
+    cvu: Optional[str] = None
+    alias: Optional[str] = None
+    account_holder_name: Optional[str] = None
+    account_type: Optional[str] = None
+    swift_code: Optional[str] = None
+    payment_instructions: Optional[str] = None
 
 
 class StoreCreate(StoreBase):
@@ -58,6 +67,15 @@ class StoreUpdate(BaseModel):
     instagram_url: Optional[str] = None
     twitter_url: Optional[str] = None
     linkedin_url: Optional[str] = None
+    bank_name: Optional[str] = None
+    account_number: Optional[str] = None
+    cbu: Optional[str] = None
+    cvu: Optional[str] = None
+    alias: Optional[str] = None
+    account_holder_name: Optional[str] = None
+    account_type: Optional[str] = None
+    swift_code: Optional[str] = None
+    payment_instructions: Optional[str] = None
 
 
 class Store(StoreBase):

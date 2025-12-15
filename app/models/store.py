@@ -37,3 +37,14 @@ class Store(Base):
     instagram_url = Column(String, nullable=True)
     twitter_url = Column(String, nullable=True)
     linkedin_url = Column(String, nullable=True)
+    
+    # Payment Information
+    bank_name = Column(String, nullable=True)
+    account_number = Column(String, nullable=True)
+    cbu = Column(String, nullable=True)  # Clave Bancaria Uniforme (Argentina)
+    cvu = Column(String, nullable=True)  # Clave Virtual Uniforme (Argentina)
+    alias = Column(String, nullable=True)  # Bank alias (Argentina)
+    account_holder_name = Column(String, nullable=True)
+    account_type = Column(String, nullable=True)  # checking, savings, etc.
+    swift_code = Column(String, nullable=True)  # For international transfers
+    payment_instructions = Column(String, nullable=True)  # Additional payment notes

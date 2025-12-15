@@ -8,6 +8,8 @@ from app.models.order import Order, OrderItem, OrderStatus, PaymentReceipt
 from app.models.product import Product
 from app.models.cart import CartItem
 from app.models.user import User
+from app.models.address import Address
+from app.models.physical_store import PhysicalStore
 from app.schemas.order import OrderCreate, OrderUpdate
 
 
@@ -15,6 +17,59 @@ class OrderService:
     @staticmethod
     def create_order(db: Session, user: User, order_in: OrderCreate) -> Order:
         """Create a new order from cart or provided items"""
+        # Validate that either address_id or physical_store_id is provided, not both
+        if order_in.address_id and order_in.physical_store_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot specify both address_id and physical_store_id. Choose delivery or pickup.",
+            )
+
+        if not order_in.address_id and not order_in.physical_store_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Must specify either address_id (for delivery) or physical_store_id (for pickup)",
+            )
+
+        address = None
+        physical_store = None
+        shipping_address = None
+
+        # Handle delivery to address
+        if order_in.address_id:
+            address = (
+                db.query(Address)
+                .filter(Address.id == order_in.address_id, Address.user_id == user.id)
+                .first()
+            )
+
+            if not address:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Address not found or does not belong to user",
+                )
+
+            # Create formatted address string for backward compatibility
+            shipping_address = f"{address.address_line1}, {address.city}, {address.postal_code}, {address.country}"
+
+        # Handle pickup at physical store
+        if order_in.physical_store_id:
+            physical_store = (
+                db.query(PhysicalStore)
+                .filter(
+                    PhysicalStore.id == order_in.physical_store_id,
+                    PhysicalStore.is_active == True,
+                )
+                .first()
+            )
+
+            if not physical_store:
+                raise HTTPException(
+                    status_code=404, detail="Physical store not found or is not active"
+                )
+
+            # Create store info string for backward compatibility
+            shipping_address = f"Pickup at {physical_store.name}, {physical_store.address_line1}, {physical_store.city}"
+
         total_amount = 0
         order_items_data = []
 
@@ -25,10 +80,16 @@ class OrderService:
                     status_code=404, detail=f"Product {item.product_id} not found"
                 )
 
-            if product.stock < item.quantity:
+            if not product.is_always_in_stock and product.stock < item.quantity:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Insufficient stock for product {product.name}",
+                )
+
+            if item.quantity > product.max_per_buy:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot purchase more than {product.max_per_buy} units of {product.name}",
                 )
 
             item_total = product.price * item.quantity
@@ -43,10 +104,26 @@ class OrderService:
 
         db_order = Order(
             user_id=user.id,
+            address_id=order_in.address_id,
+            physical_store_id=order_in.physical_store_id,
             total_amount=total_amount,
-            shipping_address=order_in.shipping_address,
+            shipping_address=shipping_address,
             status=OrderStatus.PENDING,
+            replacement_criterion=order_in.replacement_criterion,
+            comment=order_in.comment,
         )
+
+        # Snapshot address data if delivery
+        if address:
+            db_order.snapshot_full_name = address.full_name
+            db_order.snapshot_country = address.country
+            db_order.snapshot_postal_code = address.postal_code
+            db_order.snapshot_province = address.province
+            db_order.snapshot_city = address.city
+            db_order.snapshot_address_line1 = address.address_line1
+            db_order.snapshot_address_line2 = address.address_line2
+            db_order.snapshot_phone_number = address.phone_number
+
         db.add(db_order)
         db.commit()
         db.refresh(db_order)
