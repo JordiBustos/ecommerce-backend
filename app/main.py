@@ -17,12 +17,14 @@ app.add_middleware(SecurityMiddleware)
 # Set up CORS with security configuration
 setup_cors(app)
 
-# Create uploads directory if it doesn't exist
+# Create directories if they don't exist
 uploads_dir = Path("uploads")
 uploads_dir.mkdir(exist_ok=True)
 
-# Mount static files for uploads
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+assets_dir = Path("assets")
+assets_dir.mkdir(exist_ok=True)
+
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
