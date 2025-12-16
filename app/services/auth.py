@@ -74,13 +74,21 @@ class AuthService:
     def authenticate_user(db: Session, username: str, password: str) -> User:
         """Authenticate user and return user object"""
         user = db.query(User).filter(User.username == username).first()
-        if not user or not verify_password(password, user.hashed_password):
+        if not user:
+            user = db.query(User).filter(User.email == username).first()
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect username or password",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+        if not verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-
+            
         if not user.is_active:
             raise HTTPException(status_code=400, detail="Inactive user")
 
