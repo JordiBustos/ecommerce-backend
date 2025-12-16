@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, field_validator, ValidationInfo
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date
 from app.core.honeypot import HoneypotMixin
 from app.core.input_validation import InputSanitizer, validate_password_strength
@@ -68,6 +68,19 @@ class UserInDB(UserBase):
 
 class User(UserInDB):
     pass
+
+
+class UserWithRoles(UserInDB):
+    """User schema with role information"""
+    roles: List["Role"] = []
+    
+    class Config:
+        from_attributes = True
+
+
+# Import Role here to avoid circular import issues
+from app.schemas.role import Role
+UserWithRoles.model_rebuild()
 
 
 class Token(BaseModel):

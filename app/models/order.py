@@ -45,7 +45,7 @@ class Order(Base):
     # Relationships
     user = relationship("User", back_populates="orders")
     address = relationship("Address")
-    physical_store = relationship("PhysicalStore")
+    physical_store = relationship("PhysicalStore", foreign_keys=[physical_store_id])
     items = relationship("OrderItem", back_populates="order")
     receipts = relationship("PaymentReceipt", back_populates="order", cascade="all, delete-orphan")
 

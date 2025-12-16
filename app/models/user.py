@@ -4,6 +4,7 @@ from datetime import datetime
 from app.db.base import Base
 from app.models.favorite import user_favorites
 from app.models.price_list import price_list_users
+from app.models.role import user_roles
 
 
 class User(Base):
@@ -28,3 +29,16 @@ class User(Base):
     addresses = relationship("Address", back_populates="user", cascade="all, delete-orphan")
     favorite_products = relationship("Product", secondary=user_favorites, backref="favorited_by")
     price_lists = relationship("PriceList", secondary=price_list_users, back_populates="users")
+    roles = relationship("Role", secondary="user_roles", back_populates="users")
+    
+    def has_role(self, role_slug: str) -> bool:
+        """Check if user has a specific role by slug"""
+        return any(role.slug == role_slug for role in self.roles)
+    
+    def has_any_role(self, role_slugs: list[str]) -> bool:
+        """Check if user has any of the specified roles"""
+        return any(self.has_role(slug) for slug in role_slugs)
+    
+    def has_all_roles(self, role_slugs: list[str]) -> bool:
+        """Check if user has all of the specified roles"""
+        return all(self.has_role(slug) for slug in role_slugs)

@@ -23,6 +23,9 @@ from app.models.favorite import user_favorites
 from app.models.store import Store
 from app.models.physical_store import PhysicalStore
 from app.models.newsletter import NewsletterSubscriber
+from app.models.role import Role, user_roles
+from app.models.blocked_ip import BlockedIP
+from app.models.whitelisted_ip import WhitelistedIP
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

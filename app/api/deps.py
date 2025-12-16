@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, List
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -49,3 +49,57 @@ def get_current_superuser(
             status_code=403, detail="The user doesn't have enough privileges"
         )
     return current_user
+
+
+# Role-based dependency factories
+class RoleChecker:
+    """
+    Dependency class to check if user has required role(s).
+    Can be used as a dependency in route handlers.
+    """
+    
+    def __init__(self, allowed_roles: List[str]):
+        """
+        Initialize with list of allowed role slugs.
+        
+        Args:
+            allowed_roles: List of role slugs that are allowed access
+        """
+        self.allowed_roles = allowed_roles
+    
+    def __call__(self, current_user: User = Depends(get_current_active_user)) -> User:
+        """
+        Check if current user has any of the allowed roles.
+        Superusers always have access.
+        """
+        # Superusers bypass role checks
+        if current_user.is_superuser:
+            return current_user
+        
+        # Check if user has any of the allowed roles
+        if not current_user.has_any_role(self.allowed_roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"User doesn't have required role. Required: {', '.join(self.allowed_roles)}"
+            )
+        
+        return current_user
+
+
+# Pre-defined role checkers for common use cases
+def get_wholesale_user(current_user: User = Depends(get_current_active_user)) -> User:
+    """Dependency to ensure user has wholesale role"""
+    checker = RoleChecker(["wholesale", "distributor"])
+    return checker(current_user)
+
+
+def get_vip_user(current_user: User = Depends(get_current_active_user)) -> User:
+    """Dependency to ensure user has VIP role"""
+    checker = RoleChecker(["vip-customer"])
+    return checker(current_user)
+
+
+def get_business_user(current_user: User = Depends(get_current_active_user)) -> User:
+    """Dependency to ensure user is a business customer"""
+    checker = RoleChecker(["wholesale", "distributor", "retail-partner", "corporate"])
+    return checker(current_user)

@@ -11,7 +11,10 @@ from app.schemas.user import UserCreate, Token
 class AuthService:
     @staticmethod
     def register_user(db: Session, user_in: UserCreate) -> User:
-        """Register a new user"""
+        """Register a new user with default 'End Consumer' role"""
+        # Import here to avoid circular dependency
+        from app.services.role import RoleService
+        
         user = db.query(User).filter(User.email == user_in.email).first()
         if user:
             raise HTTPException(
@@ -48,6 +51,10 @@ class AuthService:
         try:
             db.commit()
             db.refresh(db_user)
+            
+            # Assign default 'End Consumer' role to new user
+            RoleService.assign_default_role(db, db_user)
+            
         except IntegrityError as e:
             db.rollback()
             error_msg = str(e.orig)
