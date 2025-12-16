@@ -83,3 +83,9 @@ class Order(OrderBase):
 
     class Config:
         from_attributes = True
+
+
+class OrderListResponse(BaseModel):
+    """Response model for paginated orders list"""
+    orders: List[Order]
+    total: int

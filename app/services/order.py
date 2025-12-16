@@ -167,13 +167,16 @@ class OrderService:
     @staticmethod
     def get_all_orders(
         db: Session, user: User, skip: int = 0, limit: int = 100
-    ) -> List[Order]:
-        """Get all orders (admin only)"""
+    ) -> tuple[List[Order], int]:
+        """Get all orders (admin only) with total count"""
         if not user.is_superuser:
             raise HTTPException(
                 status_code=403, detail="Not authorized to view all orders"
             )
-        return db.query(Order).offset(skip).limit(limit).all()
+        query = db.query(Order)
+        total = query.count()
+        orders = query.offset(skip).limit(limit).all()
+        return orders, total
 
     @staticmethod
     def get_order_by_id(db: Session, order_id: int) -> Order:

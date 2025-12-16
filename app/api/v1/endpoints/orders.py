@@ -4,7 +4,7 @@ from typing import List
 from app.api.deps import get_current_active_user, get_current_superuser
 from app.db.base import get_db
 from app.models.user import User
-from app.schemas.order import Order as OrderSchema, OrderCreate, OrderUpdate
+from app.schemas.order import Order as OrderSchema, OrderCreate, OrderUpdate, OrderListResponse
 from app.services.order import OrderService
 
 router = APIRouter()
@@ -52,15 +52,16 @@ def update_order(
     return OrderService.update_order(db, order_id, order_in, current_user)
 
 
-@router.get("/all/admin", response_model=List[OrderSchema])
+@router.get("/all/admin", response_model=OrderListResponse)
 def read_all_orders(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_superuser),
 ):
-    """Get all orders (admin only)"""
-    return OrderService.get_all_orders(db, current_user, skip, limit)
+    """Get all orders (admin only) with pagination"""
+    orders, total = OrderService.get_all_orders(db, current_user, skip, limit)
+    return {"orders": orders, "total": total}
 
 
 @router.post("/{order_id}/upload-receipt", response_model=OrderSchema)
