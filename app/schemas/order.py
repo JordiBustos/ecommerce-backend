@@ -55,6 +55,7 @@ class OrderUpdate(BaseModel):
     shipping_address: Optional[str] = None
     replacement_criterion: Optional[str] = None
     comment: Optional[str] = None
+    estimated_delivery_date: Optional[datetime] = None
 
 
 class Order(OrderBase):
@@ -67,6 +68,7 @@ class Order(OrderBase):
     payment_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    estimated_delivery_date: Optional[datetime] = None
     
     # Address snapshot fields
     snapshot_full_name: Optional[str] = None

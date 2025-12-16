@@ -40,6 +40,7 @@ class Order(Base):
     
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    estimated_delivery_date = Column(DateTime, nullable=True)
     
     # Relationships
     user = relationship("User", back_populates="orders")
