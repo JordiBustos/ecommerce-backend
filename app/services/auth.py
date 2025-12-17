@@ -1,4 +1,5 @@
 from fastapi import HTTPException, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from datetime import timedelta
@@ -79,23 +80,27 @@ class AuthService:
         return db_user
 
     @staticmethod
+    def _get_user_by_username(db: Session, username: str) -> User | None:
+        """Get user by username from database"""
+        return db.query(User).filter(User.username == username).first()
+
+    @staticmethod
     def authenticate_user(db: Session, username: str, password: str) -> User:
-        """Authenticate user and return user object"""
-        user = (
-            db.query(User)
-            .filter(User.username == username or User.email == username)
-            .first()
-        )
+        """Authenticate user by username or email and return user object"""
+        user = db.query(User).filter(
+            or_(User.username == username, User.email == username)
+        ).first()
+        
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
+                detail="Incorrect username/email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         if not verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
+                detail="Incorrect username/email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
