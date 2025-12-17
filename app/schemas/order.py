@@ -18,6 +18,7 @@ class OrderItemCreate(BaseModel):
 class OrderItem(OrderItemBase):
     id: int
     order_id: int
+    product_slug: Optional[str] = None
 
     class Config:
         from_attributes = True

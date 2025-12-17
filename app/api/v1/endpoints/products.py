@@ -178,21 +178,21 @@ def read_products(
     return {"products": products, "total": total}
 
 
-@router.get("/{product_id}", response_model=ProductSchema)
-def read_product(product_id: int, db: Session = Depends(get_db)):
-    """Get product by ID"""
-    return ProductService.get_product(db, product_id)
+@router.get("/{slug}", response_model=ProductSchema)
+def read_product(slug: str, db: Session = Depends(get_db)):
+    """Get product by slug"""
+    return ProductService.get_product(db, slug)
 
 
-@router.put("/{product_id}", response_model=ProductSchema)
+@router.put("/{slug}", response_model=ProductSchema)
 def update_product(
-    product_id: int,
+    slug: str,
     product_in: ProductUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_superuser),
 ):
     """Update product (admin only)"""
-    return ProductService.update_product(db, product_id, product_in)
+    return ProductService.update_product(db, slug, product_in)
 
 
 @router.delete("/all", status_code=200)
@@ -204,14 +204,14 @@ def delete_all_products(
     return {"message": f"Successfully deleted {count} products"}
 
 
-@router.delete("/{product_id}", status_code=204)
+@router.delete("/{slug}", status_code=204)
 def delete_product(
-    product_id: int,
+    slug: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_superuser),
 ):
     """Delete product (admin only)"""
-    ProductService.delete_product(db, product_id)
+    ProductService.delete_product(db, slug)
     return None
 
 

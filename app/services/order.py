@@ -124,10 +124,16 @@ class OrderService:
         db.refresh(db_order)
 
         for item_data in order_items_data:
-            order_item = OrderItem(order_id=db_order.id, **item_data)
+            product = ProductValidator.get_product_or_404(db, item_data["product_id"])
+            order_item = OrderItem(
+                order_id=db_order.id,
+                product_id=item_data["product_id"],
+                product_slug=product.slug,
+                quantity=item_data["quantity"],
+                price=item_data["price"],
+            )
             db.add(order_item)
 
-            product = ProductValidator.get_product_or_404(db, item_data["product_id"])
             if not product.is_always_in_stock:
                 product.stock -= item_data["quantity"]
 

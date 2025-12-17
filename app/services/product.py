@@ -60,7 +60,9 @@ class CategoryService(SlugUniqueService[Category, CategoryCreate, CategoryUpdate
     def create_category(self, db: Session, category_in: CategoryCreate) -> Category:
         """Create a new category or subcategory with parent validation"""
         if category_in.parent_id:
-            parent = db.query(Category).filter(Category.id == category_in.parent_id).first()
+            parent = (
+                db.query(Category).filter(Category.id == category_in.parent_id).first()
+            )
             if not parent:
                 raise HTTPException(status_code=404, detail="Parent category not found")
 
@@ -185,7 +187,9 @@ class ProductService:
     @staticmethod
     def create_product(db: Session, product_in: ProductCreate) -> Product:
         """Create a new product with category validation"""
-        category = db.query(Category).filter(Category.id == product_in.category_id).first()
+        category = (
+            db.query(Category).filter(Category.id == product_in.category_id).first()
+        )
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
 
@@ -217,19 +221,17 @@ class ProductService:
         )
 
     @staticmethod
-    def get_product(db: Session, product_id: int) -> Product:
-        """Get product by ID"""
-        product = db.query(Product).filter(Product.id == product_id).first()
+    def get_product(db: Session, slug: str) -> Product:
+        """Get product by slug"""
+        product = db.query(Product).filter(Product.slug == slug).first()
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
         return product
 
     @staticmethod
-    def update_product(
-        db: Session, product_id: int, product_in: ProductUpdate
-    ) -> Product:
+    def update_product(db: Session, slug: str, product_in: ProductUpdate) -> Product:
         """Update product"""
-        product = ProductService.get_product(db, product_id)
+        product = ProductService.get_product(db, slug)
         update_data = product_in.model_dump(exclude_unset=True)
 
         if "category_id" in update_data:
@@ -249,9 +251,9 @@ class ProductService:
         return product
 
     @staticmethod
-    def delete_product(db: Session, product_id: int) -> None:
+    def delete_product(db: Session, slug: str) -> None:
         """Delete product"""
-        product = ProductService.get_product(db, product_id)
+        product = ProductService.get_product(db, slug)
         db.delete(product)
         db.commit()
 
