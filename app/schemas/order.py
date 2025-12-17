@@ -92,3 +92,4 @@ class OrderListResponse(BaseModel):
     """Response model for paginated orders list"""
     orders: List[Order]
     total: int
+    period_total: Optional[float] = None  # Total orders in the time period (if start_date or end_date provided)

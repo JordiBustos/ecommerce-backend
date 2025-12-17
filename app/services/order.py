@@ -1,11 +1,12 @@
-from typing import List
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, UploadFile
-from pathlib import Path
+from datetime import datetime
 import os
+from pathlib import Path
 import uuid
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+from typing import List, Optional
+from fastapi import HTTPException, UploadFile
 from app.models.order import Order, OrderItem, OrderStatus, PaymentReceipt
-from app.models.product import Product
 from app.models.cart import CartItem
 from app.models.user import User
 from app.models.address import Address
@@ -19,7 +20,6 @@ class OrderService:
     @staticmethod
     def create_order(db: Session, user: User, order_in: OrderCreate) -> Order:
         """Create a new order from cart or provided items"""
-        # Validate that either address_id or physical_store_id is provided, not both
         if order_in.address_id and order_in.physical_store_id:
             raise HTTPException(
                 status_code=400,
@@ -36,7 +36,6 @@ class OrderService:
         physical_store = None
         shipping_address = None
 
-        # Handle delivery to address
         if order_in.address_id:
             address = (
                 db.query(Address)
@@ -50,10 +49,8 @@ class OrderService:
                     detail="Address not found or does not belong to user",
                 )
 
-            # Create formatted address string for backward compatibility
             shipping_address = f"{address.address_line1}, {address.city}, {address.postal_code}, {address.country}"
 
-        # Handle pickup at physical store
         if order_in.physical_store_id:
             physical_store = (
                 db.query(PhysicalStore)
@@ -69,20 +66,16 @@ class OrderService:
                     status_code=404, detail="Physical store not found or is not active"
                 )
 
-            # Create store info string for backward compatibility
             shipping_address = f"Pickup at {physical_store.name}, {physical_store.address_line1}, {physical_store.city}"
 
         total_amount = 0
         order_items_data = []
 
-        # Validate all items using ProductValidator (Chain of Responsibility pattern)
         for item in order_in.items:
-            # Validate product and quantity using ProductValidator
             product = ProductValidator.validate_product_and_quantity(
                 db, item.product_id, item.quantity, context="order"
             )
 
-            # Calculate price using PriceCalculator with user-specific pricing
             item_price = PriceCalculator.get_product_price(product, user, db)
             item_total = PriceCalculator.calculate_item_total(
                 product, item.quantity, user, db
@@ -172,17 +165,48 @@ class OrderService:
 
     @staticmethod
     def get_all_orders(
-        db: Session, user: User, skip: int = 0, limit: int = 100
-    ) -> tuple[List[Order], int]:
-        """Get all orders (admin only) with total count"""
+        db: Session,
+        user: User,
+        skip: int = 0,
+        limit: int = 100,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+    ) -> tuple[List[Order], int, Optional[float]]:
+        """Get all orders (admin only) with total count and optional time range filtering.
+        Returns: (orders, total, period_total)
+        - total: count with pagination
+        - period_total: sum of total_amount in time range (None if no date filters)
+        """
         if not user.is_superuser:
             raise HTTPException(
                 status_code=403, detail="Not authorized to view all orders"
             )
         query = db.query(Order)
+
+        has_date_filter = start_date is not None or end_date is not None
+        period_total = None
+
+        if start_date:
+            query = query.filter(Order.created_at >= start_date)
+        if end_date:
+            query = query.filter(Order.created_at <= end_date)
+
         total = query.count()
+
+        if has_date_filter:
+            sum_query = db.query(Order)
+            if start_date:
+                sum_query = sum_query.filter(Order.created_at >= start_date)
+            if end_date:
+                sum_query = sum_query.filter(Order.created_at <= end_date)
+
+            period_total_result = sum_query.with_entities(
+                func.sum(Order.total_amount)
+            ).scalar()
+            period_total = float(period_total_result) if period_total_result else 0.0
+
         orders = query.offset(skip).limit(limit).all()
-        return orders, total
+        return orders, total, period_total
 
     @staticmethod
     def get_order_by_id(db: Session, order_id: int) -> Order:

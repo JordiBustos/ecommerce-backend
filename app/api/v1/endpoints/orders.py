@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+from datetime import datetime
 from app.api.deps import get_current_active_user, get_current_superuser
 from app.db.base import get_db
 from app.models.user import User
@@ -56,12 +57,14 @@ def update_order(
 def read_all_orders(
     skip: int = 0,
     limit: int = 100,
+    start_date: Optional[datetime] = Query(None, description="Filter orders from this date (ISO 8601 format)"),
+    end_date: Optional[datetime] = Query(None, description="Filter orders until this date (ISO 8601 format)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_superuser),
 ):
-    """Get all orders (admin only) with pagination"""
-    orders, total = OrderService.get_all_orders(db, current_user, skip, limit)
-    return {"orders": orders, "total": total}
+    """Get all orders (admin only) with pagination and optional time range filtering"""
+    orders, total, period_total = OrderService.get_all_orders(db, current_user, skip, limit, start_date, end_date)
+    return {"orders": orders, "total": total, "period_total": period_total}
 
 
 @router.post("/{order_id}/upload-receipt", response_model=OrderSchema)
