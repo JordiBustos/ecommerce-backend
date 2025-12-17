@@ -164,7 +164,8 @@ def get_users_with_role(
             "email": user.email,
             "username": user.username,
             "full_name": user.full_name,
-            "is_active": user.is_active
+            "is_active": user.is_active,
+            "roles": [r.slug for r in user.roles]
         }
         for user in users
     ]
