@@ -14,7 +14,7 @@ class AuthService:
         """Register a new user with default 'End Consumer' role"""
         # Import here to avoid circular dependency
         from app.services.role import RoleService
-        
+
         user = db.query(User).filter(User.email == user_in.email).first()
         if user:
             raise HTTPException(
@@ -47,14 +47,14 @@ class AuthService:
         )
 
         db.add(db_user)
-        
+
         try:
             db.commit()
             db.refresh(db_user)
-            
+
             # Assign default 'End Consumer' role to new user
             RoleService.assign_default_role(db, db_user)
-            
+
         except IntegrityError as e:
             db.rollback()
             error_msg = str(e.orig)
@@ -72,30 +72,33 @@ class AuthService:
                 )
             else:
                 raise HTTPException(
-                    status_code=400, detail="Registration failed: duplicate value detected"
+                    status_code=400,
+                    detail="Registration failed: duplicate value detected",
                 )
-        
+
         return db_user
 
     @staticmethod
     def authenticate_user(db: Session, username: str, password: str) -> User:
         """Authenticate user and return user object"""
-        user = db.query(User).filter(User.username == username).first()
+        user = (
+            db.query(User)
+            .filter(User.username == username or User.email == username)
+            .first()
+        )
         if not user:
-            user = db.query(User).filter(User.email == username).first()
-            if not user:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Incorrect username or password",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         if not verify_password(password, user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-            
+
         if not user.is_active:
             raise HTTPException(status_code=400, detail="Inactive user")
 
