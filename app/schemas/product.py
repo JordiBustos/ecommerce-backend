@@ -72,6 +72,7 @@ class ProductBase(BaseModel):
     name: str
     description: Optional[str] = None
     price: float
+    offer_price: Optional[float] = None
     stock: int = 0
     is_always_in_stock: bool = False
     max_per_buy: Optional[int] = None
@@ -93,6 +94,7 @@ class ProductUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     price: Optional[float] = None
+    offer_price: Optional[float] = None
     stock: Optional[int] = None
     is_always_in_stock: Optional[bool] = None
     max_per_buy: Optional[int] = None
@@ -112,6 +114,13 @@ class Product(ProductBase):
     updated_at: datetime
     category: Optional[Category] = None
     brand: Optional[Brand] = None
+    
+    # Optional pricing information (calculated fields, not from DB)
+    final_price: Optional[float] = None
+    has_discount: Optional[bool] = None
+    savings: Optional[float] = None
+    savings_percent: Optional[float] = None
+    discount_source: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -134,3 +143,13 @@ class CSVImportResult(BaseModel):
 class ProductListResponse(BaseModel):
     products: List[Product]
     total: int
+
+
+class ProductPricingInfo(BaseModel):
+    """Pricing information for a product including discounts"""
+    base_price: float
+    final_price: float
+    has_discount: bool
+    savings: float
+    savings_percent: float
+    discount_source: Optional[str] = None  # 'offer', 'role_price_list', or None

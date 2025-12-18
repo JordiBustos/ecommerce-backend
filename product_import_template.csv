@@ -1,13 +1,13 @@
-name,price,category,slug,sku,ean,description,stock,is_always_in_stock,max_per_buy,weight,units_per_package,brand,image_url,is_active
-"Wireless Mouse",19.99,Electronics,wireless-mouse,SKU-001,789000000001,"Ergonomic wireless mouse",120,0,5,0.2,1,Logitech,https://example.com/img/1.jpg,1
-"Mechanical Keyboard",85.50,Electronics,mechanical-keyboard,SKU-002,789000000002,"RGB mechanical keyboard",60,0,2,1.1,1,Logitech,https://example.com/img/2.jpg,1
-"USB-C Charger 65W",45.00,Electronics,usb-c-charger-65w,SKU-003,789000000003,"Fast USB-C charger",0,1,10,0.3,1,Anker,https://example.com/img/3.jpg,1
-"Bluetooth Headphones",120.99,Audio,bluetooth-headphones,SKU-004,789000000004,"Noise cancelling headphones",40,0,1,0.9,1,Sony,https://example.com/img/4.jpg,1
-"Laptop Stand",32.00,Accessories,laptop-stand,SKU-005,789000000005,"Adjustable aluminum stand",90,0,3,0.8,1,Generic,https://example.com/img/5.jpg,1
-"HDMI Cable 2m",8.99,Cables,hdmi-cable-2m,SKU-006,789000000006,"High speed HDMI cable",300,0,10,0.15,1,Anker,https://example.com/img/6.jpg,1
-"USB Flash Drive 32GB",12.50,Storage,usb-flash-drive-32gb,SKU-007,789000000007,"32GB USB 3.0 drive",200,0,5,0.05,1,SanDisk,https://example.com/img/7.jpg,1
-"USB Flash Drive 64GB",18.00,Storage,usb-flash-drive-64gb,SKU-008,789000000008,"64GB USB 3.0 drive",180,0,5,0.05,1,SanDisk,https://example.com/img/8.jpg,1
-"Gaming Mouse Pad",14.99,Gaming,gaming-mouse-pad,SKU-009,789000000009,"Large gaming mouse pad",140,0,3,0.4,1,Razer,https://example.com/img/9.jpg,1
+name,price,offer_price,category,slug,sku,ean,description,stock,is_always_in_stock,max_per_buy,weight,units_per_package,brand,image_url,is_active
+"Wireless Mouse",19.99,,Electronics,wireless-mouse,SKU-001,789000000001,"Ergonomic wireless mouse",120,0,5,0.2,1,Logitech,https://example.com/img/1.jpg,1
+"Mechanical Keyboard",85.50,79.99,Electronics,mechanical-keyboard,SKU-002,789000000002,"RGB mechanical keyboard",60,0,2,1.1,1,Logitech,https://example.com/img/2.jpg,1
+"USB-C Charger 65W",45.00,,Electronics,usb-c-charger-65w,SKU-003,789000000003,"Fast USB-C charger",0,1,10,0.3,1,Anker,https://example.com/img/3.jpg,1
+"Bluetooth Headphones",120.99,99.99,Audio,bluetooth-headphones,SKU-004,789000000004,"Noise cancelling headphones",40,0,1,0.9,1,Sony,https://example.com/img/4.jpg,1
+"Laptop Stand",32.00,,Accessories,laptop-stand,SKU-005,789000000005,"Adjustable aluminum stand",90,0,3,0.8,1,Generic,https://example.com/img/5.jpg,1
+"HDMI Cable 2m",8.99,,Cables,hdmi-cable-2m,SKU-006,789000000006,"High speed HDMI cable",300,0,10,0.15,1,Anker,https://example.com/img/6.jpg,1
+"USB Flash Drive 32GB",12.50,,Storage,usb-flash-drive-32gb,SKU-007,789000000007,"32GB USB 3.0 drive",200,0,5,0.05,1,SanDisk,https://example.com/img/7.jpg,1
+"USB Flash Drive 64GB",18.00,,Storage,usb-flash-drive-64gb,SKU-008,789000000008,"64GB USB 3.0 drive",180,0,5,0.05,1,SanDisk,https://example.com/img/8.jpg,1
+"Gaming Mouse Pad",14.99,12.99,Gaming,gaming-mouse-pad,SKU-009,789000000009,"Large gaming mouse pad",140,0,3,0.4,1,Razer,https://example.com/img/9.jpg,1
 "Webcam Full HD",59.00,Electronics,webcam-full-hd,SKU-010,789000000010,"1080p USB webcam",70,0,2,0.25,1,Logitech,https://example.com/img/10.jpg,1
 "Portable SSD 500GB",89.90,Storage,portable-ssd-500gb,SKU-011,789000000011,"High speed portable SSD",55,0,1,0.2,1,Samsung,https://example.com/img/11.jpg,1
 "Portable SSD 1TB",145.00,Storage,portable-ssd-1tb,SKU-012,789000000012,"1TB portable SSD",40,0,1,0.2,1,Samsung,https://example.com/img/12.jpg,1

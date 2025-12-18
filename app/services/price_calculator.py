@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from app.models.product import Product
 from app.models.user import User
 from app.models.price_list import PriceList, PriceListItem
-from decimal import Decimal
 
 
 class PricingStrategy(Protocol):
@@ -30,39 +29,58 @@ class BasePricingStrategy:
 
 
 class PriceListPricingStrategy:
-    """Pricing strategy that checks user's assigned price list"""
+    """Pricing strategy that checks user's role and assigned price list"""
     
     @staticmethod
     def calculate_price(product: Product, user: Optional[User], db: Session) -> float:
         """
-        Return custom price from user's price list if exists,
-        otherwise return base price
+        Calculate price based on user's role and price list.
+        Priority:
+        1. Price list price (if user has role with price list)
+        2. Offer price (if set and lower than current price)
+        3. Base product price
+        
+        Args:
+            product: Product to calculate price for
+            user: Optional user (for role-based pricing)
+            db: Database session
         """
-        if not user:
+        if not user or not db:
             return product.price
         
-        # Check if user has assigned price list
-        price_list = (
-            db.query(PriceList)
-            .join(PriceList.users)
-            .filter(User.id == user.id, PriceList.is_active == True)
-            .first()
-        )
+        user_roles = user.roles if hasattr(user, 'roles') else []
+        applicable_price = product.price
         
-        if not price_list:
-            return product.price
-        
-        # Check if product has custom price in this price list
-        price_list_item = (
-            db.query(PriceListItem)
-            .filter(
-                PriceListItem.price_list_id == price_list.id,
-                PriceListItem.product_id == product.id
+        for role in user_roles:
+            price_list = (
+                db.query(PriceList)
+                .filter(
+                    PriceList.role_filter == role.slug,
+                    PriceList.is_active == True
+                )
+                .first()
             )
-            .first()
-        )
+            
+            if price_list:
+                price_list_item = (
+                    db.query(PriceListItem)
+                    .filter(
+                        PriceListItem.price_list_id == price_list.id,
+                        PriceListItem.product_id == product.id
+                    )
+                    .first()
+                )
+                
+                if price_list_item:
+                    # Use price list price directly - price lists override base price
+                    applicable_price = price_list_item.price
+                    break
         
-        return price_list_item.price if price_list_item else product.price
+        # Apply offer price if it's lower than current applicable price
+        if product.offer_price and product.offer_price > 0:
+            applicable_price = min(applicable_price, product.offer_price)
+        
+        return applicable_price
 
 
 class PriceCalculator:
@@ -171,7 +189,7 @@ class PriceCalculator:
     ) -> dict:
         """
         Get both base price and user-specific price for comparison.
-        Useful for displaying savings.
+        Useful for displaying savings in product cards.
         
         Args:
             product: Product to compare prices for
@@ -179,15 +197,34 @@ class PriceCalculator:
             db: Optional database session
         
         Returns:
-            dict: Dictionary with 'base_price', 'user_price', and 'savings'
+            dict: Dictionary with pricing information
+            {
+                'base_price': float,          # Original product price
+                'final_price': float,         # Price user will pay
+                'has_discount': bool,         # True if user gets a discount
+                'savings': float,             # Amount saved
+                'savings_percent': float,     # Percentage saved
+                'discount_source': str|None   # 'offer', 'role_price_list', or None
+            }
         """
         base_price = product.price
-        user_price = PriceCalculator.get_product_price(product, user, db) if user and db else base_price
-        savings = base_price - user_price if user_price < base_price else 0.0
+        final_price = PriceCalculator.get_product_price(product, user, db) if user and db else base_price
+        savings = base_price - final_price if final_price < base_price else 0.0
+        has_discount = savings > 0
+        
+        # Determine discount source
+        discount_source = None
+        if has_discount:
+            if product.offer_price and product.offer_price > 0 and final_price == product.offer_price:
+                discount_source = 'offer'
+            elif final_price < base_price:
+                discount_source = 'role_price_list'
         
         return {
             "base_price": round(base_price, 2),
-            "user_price": round(user_price, 2),
+            "final_price": round(final_price, 2),
+            "has_discount": has_discount,
             "savings": round(savings, 2),
-            "savings_percent": round((savings / base_price * 100), 2) if base_price > 0 else 0.0
+            "savings_percent": round((savings / base_price * 100), 2) if base_price > 0 else 0.0,
+            "discount_source": discount_source
         }

@@ -1,4 +1,4 @@
-from typing import Generator, List
+from typing import Generator, List, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -8,6 +8,7 @@ from app.db.base import get_db
 from app.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login", auto_error=False)
 
 
 def get_current_user(
@@ -30,6 +31,8 @@ def get_current_user(
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise credentials_exception
+    # Force load roles relationship
+    len(user.roles)
     return user
 
 
@@ -39,6 +42,33 @@ def get_current_active_user(
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
+
+
+def get_optional_current_user(
+    db: Session = Depends(get_db),
+    token: Optional[str] = Depends(oauth2_scheme_optional)
+) -> Optional[User]:
+    """
+    Get current user if token is provided, otherwise return None.
+    Useful for endpoints that have different behavior for authenticated vs anonymous users.
+    """
+    if token is None:
+        return None
+    
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id: int = payload.get("sub")
+        if user_id is None:
+            return None
+    except JWTError:
+        return None
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None or not user.is_active:
+        return None
+    # Force load roles relationship
+    len(user.roles)
+    return user
 
 
 def get_current_superuser(

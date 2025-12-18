@@ -291,6 +291,7 @@ class ProductService:
         - name (required)
         - description (optional)
         - price (required)
+        - offer_price (optional)
         - stock (optional, default: 0)
         - is_always_in_stock (optional, default: false)
         - max_per_buy (optional)
@@ -405,6 +406,7 @@ class ProductService:
                     product_data = {
                         "name": row["name"].strip(),
                         "price": float(row["price"]),
+                        "offer_price": float(row["offer_price"]) if row.get("offer_price", "").strip() else None,
                         "category_id": category_id,
                         "slug": row["slug"].strip(),
                         "sku": row.get("sku", "").strip() or None,

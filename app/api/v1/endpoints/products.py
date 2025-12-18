@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from app.api.deps import get_current_superuser
+from app.api.deps import get_current_superuser, get_optional_current_user
 from app.db.base import get_db
 from app.models.user import User
 from app.schemas.product import (
@@ -17,9 +17,11 @@ from app.schemas.product import (
     BrandUpdate,
     CSVImportResult,
     ProductListResponse,
+    ProductPricingInfo,
 )
 from app.services.product import ProductService
 from app.services.product import CategoryService, ProductService, BrandService
+from app.services.price_calculator import PriceCalculator, PriceListPricingStrategy
 
 router = APIRouter()
 
@@ -150,13 +152,24 @@ def search_products(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     """
-    Search products across multiple fields (optimized).
+    Search products across multiple fields (optimized) with calculated pricing.
     Searches in: name, description, SKU, EAN, category name, brand name.
     Returns products list and total count for pagination.
     """
     products, total = ProductService.search_products(db, q, skip, limit)
+    
+    # Add pricing information to each product
+    for product in products:
+        pricing_info = PriceCalculator.compare_prices(product, current_user, db)
+        product.final_price = pricing_info["final_price"]
+        product.has_discount = pricing_info["has_discount"]
+        product.savings = pricing_info["savings"]
+        product.savings_percent = pricing_info["savings_percent"]
+        product.discount_source = pricing_info["discount_source"]
+    
     return {"products": products, "total": total}
 
 
@@ -168,20 +181,76 @@ def read_products(
     brands_id: List[int] = Query(default=[], alias="brands_id[]"),
     search: Optional[str] = None,
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
-    """Get all products with optional filters. Returns products list and total count for pagination."""
+    """Get all products with optional filters and calculated pricing. Returns products list and total count for pagination."""
     categories_filter = categories_id if categories_id else None
     brands_filter = brands_id if brands_id else None
     products, total = ProductService.get_products(
         db, skip, limit, categories_filter, brands_filter, search
     )
+    
+    # Add pricing information to each product
+    for product in products:
+        pricing_info = PriceCalculator.compare_prices(product, current_user, db)
+        product.final_price = pricing_info["final_price"]
+        product.has_discount = pricing_info["has_discount"]
+        product.savings = pricing_info["savings"]
+        product.savings_percent = pricing_info["savings_percent"]
+        product.discount_source = pricing_info["discount_source"]
+    
     return {"products": products, "total": total}
 
 
+@router.get("/{slug}/pricing", response_model=ProductPricingInfo)
+def get_product_pricing(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    """
+    Get pricing information for a product including discounts.
+    Works for both authenticated and anonymous users.
+    Authenticated users will see role-based pricing if applicable.
+    """
+    product = ProductService.get_product(db, slug)
+    pricing_info = PriceCalculator.compare_prices(product, current_user, db)
+    return pricing_info
+
+
+@router.get("/{slug}/pricing/debug")
+def get_product_pricing_debug(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    """
+    Get detailed debugging information about price calculation.
+    Shows all price lists, roles, and calculation steps.
+    Useful for troubleshooting pricing issues.
+    """
+    product = ProductService.get_product(db, slug)
+    debug_info = PriceListPricingStrategy.get_debug_info(product, current_user, db)
+    return debug_info
+
+
 @router.get("/{slug}", response_model=ProductSchema)
-def read_product(slug: str, db: Session = Depends(get_db)):
-    """Get product by slug"""
-    return ProductService.get_product(db, slug)
+def read_product(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_current_user)
+):
+    """Get product by slug with calculated pricing based on user"""
+    product = ProductService.get_product(db, slug)
+    
+    pricing_info = PriceCalculator.compare_prices(product, current_user, db)
+    product.final_price = pricing_info["final_price"]
+    product.has_discount = pricing_info["has_discount"]
+    product.savings = pricing_info["savings"]
+    product.savings_percent = pricing_info["savings_percent"]
+    product.discount_source = pricing_info["discount_source"]
+    
+    return product
 
 
 @router.put("/{slug}", response_model=ProductSchema)
@@ -234,8 +303,8 @@ async def import_products_csv(
 
     Expected CSV format:
     ```
-    name,price,category,slug,sku,ean,description,stock,is_always_in_stock,max_per_buy,weight,units_per_package,brand,image_url,is_active
-    Product Name,19.99,Electronics,product-slug,SKU123,1234567890123,Description here,100,false,10,0.5,1,Logitech,https://example.com/image.jpg,true
+    name,price,offer_price,category,slug,sku,ean,description,stock,is_always_in_stock,max_per_buy,weight,units_per_package,brand,image_url,is_active
+    Product Name,19.99,15.99,Electronics,product-slug,SKU123,1234567890123,Description here,100,false,10,0.5,1,Logitech,https://example.com/image.jpg,true
     ```
 
     Required fields:
@@ -245,6 +314,7 @@ async def import_products_csv(
     - slug: URL-friendly unique identifier
 
     Optional fields:
+    - offer_price: Promotional price (numeric, lower than price)
     - sku: Stock Keeping Unit (unique if provided)
     - ean: European Article Number (unique if provided)
     - description: Product description

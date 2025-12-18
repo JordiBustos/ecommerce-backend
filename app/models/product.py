@@ -43,6 +43,7 @@ class Product(Base):
     name = Column(String, index=True, nullable=False)
     description = Column(Text)
     price = Column(Float, nullable=False)
+    offer_price = Column(Float, nullable=True)  # Special offer price (lowest if set)
     stock = Column(Integer, default=0)
     is_always_in_stock = Column(Boolean, default=False)
     max_per_buy = Column(Integer, nullable=True)

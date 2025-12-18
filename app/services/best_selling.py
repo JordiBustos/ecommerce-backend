@@ -6,7 +6,9 @@ import json
 import logging
 from app.models.product import Product
 from app.models.order import OrderItem
+from app.models.user import User
 from app.core.config import settings
+from app.services.price_calculator import PriceCalculator
 
 logger = logging.getLogger(__name__)
 
@@ -45,10 +47,19 @@ class BestSellingService:
         return f"best_selling:limit:{limit}"
 
     @classmethod
-    def get_best_selling_products(cls, db: Session, limit: int = 12) -> List[Product]:
+    def get_best_selling_products(cls, db: Session, limit: int = 12, user: Optional[User] = None) -> List[Product]:
         """
         Get the top N best-selling products based on order history.
         Uses Redis cache with TTL to improve performance.
+        Calculates pricing based on user's roles and price lists.
+        
+        Args:
+            db: Database session
+            limit: Number of products to return
+            user: Optional user for calculating personalized pricing
+        
+        Returns:
+            List of products with pricing information
         """
         cache_key = cls.get_cache_key(limit)
         redis_client = cls.get_redis_client()
@@ -63,9 +74,20 @@ class BestSellingService:
                         db.query(Product).filter(Product.id.in_(product_ids)).all()
                     )
                     product_dict = {p.id: p for p in products}
-                    return [
+                    ordered_products = [
                         product_dict[pid] for pid in product_ids if pid in product_dict
                     ]
+                    
+                    # Add pricing information to each product
+                    for product in ordered_products:
+                        pricing_info = PriceCalculator.compare_prices(product, user, db)
+                        product.final_price = pricing_info["final_price"]
+                        product.has_discount = pricing_info["has_discount"]
+                        product.savings = pricing_info["savings"]
+                        product.savings_percent = pricing_info["savings_percent"]
+                        product.discount_source = pricing_info["discount_source"]
+                    
+                    return ordered_products
             except Exception as e:
                 logger.error(f"Redis cache read error: {e}")
 
@@ -80,6 +102,15 @@ class BestSellingService:
         )
 
         products = [product for product, _ in best_sellers]
+
+        # Add pricing information to each product
+        for product in products:
+            pricing_info = PriceCalculator.compare_prices(product, user, db)
+            product.final_price = pricing_info["final_price"]
+            product.has_discount = pricing_info["has_discount"]
+            product.savings = pricing_info["savings"]
+            product.savings_percent = pricing_info["savings_percent"]
+            product.discount_source = pricing_info["discount_source"]
 
         if redis_client and products:
             try:
