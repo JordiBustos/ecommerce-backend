@@ -25,6 +25,7 @@ assets_dir = Path("assets")
 assets_dir.mkdir(exist_ok=True)
 
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
