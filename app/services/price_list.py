@@ -102,8 +102,6 @@ class PriceListService:
         db: Session, price_list_id: int, item_in: PriceListItemCreate
     ) -> PriceListItem:
         """Add a product with price to a price list"""
-        price_list = PriceListService.get_price_list(db, price_list_id)
-
         product = db.query(Product).filter(Product.id == item_in.product_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")

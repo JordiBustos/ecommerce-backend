@@ -16,23 +16,29 @@ class AuthService:
         # Import here to avoid circular dependency
         from app.services.role import RoleService
 
-        user = db.query(User).filter(User.email == user_in.email).first()
-        if user:
-            raise HTTPException(
-                status_code=400, detail="User with this email already exists"
-            )
+        existing_user = db.query(User).filter(
+        or_(
+            User.email == user_in.email,
+            User.username == user_in.username,
+            User.dni == user_in.dni
+        )
+        ).first()
 
-        user = db.query(User).filter(User.username == user_in.username).first()
-        if user:
-            raise HTTPException(
-                status_code=400, detail="User with this username already exists"
-            )
-
-        user = db.query(User).filter(User.dni == user_in.dni).first()
-        if user:
-            raise HTTPException(
-                status_code=400, detail="User with this DNI already exists"
-            )
+        if existing_user:
+            if existing_user.email == user_in.email:
+                raise HTTPException(
+                    status_code=400, detail="User with this email already exists"
+                )
+            
+            if existing_user.username == user_in.username:
+                raise HTTPException(
+                    status_code=400, detail="User with this username already exists"
+                )
+                
+            if existing_user.dni == user_in.dni:
+                raise HTTPException(
+                    status_code=400, detail="User with this DNI already exists"
+                )
 
         db_user = User(
             email=user_in.email,

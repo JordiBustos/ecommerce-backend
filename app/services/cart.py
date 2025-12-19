@@ -18,7 +18,6 @@ class CartService:
         """
         cart_items = db.query(CartItem).filter(CartItem.user_id == user.id).all()
         
-        # Calculate total using PriceCalculator for user-specific pricing
         items_for_calc = [(item.product, item.quantity) for item in cart_items]
         total = PriceCalculator.calculate_cart_total(items_for_calc, user, db)
         
@@ -132,7 +131,6 @@ class CartService:
         for user in users_with_carts:
             cart_items = db.query(CartItem).filter(CartItem.user_id == user.id).all()
             
-            # Calculate total using PriceCalculator
             items_for_calc = [(item.product, item.quantity) for item in cart_items]
             total = PriceCalculator.calculate_cart_total(items_for_calc, user, db)
             

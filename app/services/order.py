@@ -88,6 +88,7 @@ class OrderService:
                     "product_id": product.id,
                     "quantity": item.quantity,
                     "price": item_price,
+                    "product_slug": product.slug,
                 }
             )
 

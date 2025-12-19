@@ -9,7 +9,6 @@ ENV/
 .venv
 .env
 .DS_Store
-*.db
 *.sqlite3
 alembic/versions/*.py
 !alembic/versions/.gitkeep
