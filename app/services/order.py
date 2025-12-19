@@ -14,6 +14,7 @@ from app.models.physical_store import PhysicalStore
 from app.schemas.order import OrderCreate, OrderUpdate
 from app.services.product_validator import ProductValidator
 from app.services.price_calculator import PriceCalculator
+from app.services.coupon import CouponService
 
 
 class OrderService:
@@ -90,10 +91,33 @@ class OrderService:
                 }
             )
 
+        # Apply coupon if provided
+        coupon = None
+        discount_amount = 0.0
+        if order_in.coupon_code:
+            is_valid, message, calculated_discount, coupon = CouponService.validate_coupon(
+                db=db,
+                code=order_in.coupon_code,
+                user_id=user.id,
+                order_total=total_amount
+            )
+            
+            if not is_valid:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid coupon: {message}"
+                )
+            
+            discount_amount = calculated_discount
+            total_amount -= discount_amount
+
         db_order = Order(
             user_id=user.id,
             address_id=order_in.address_id,
             physical_store_id=order_in.physical_store_id,
+            coupon_id=coupon.id if coupon else None,
+            coupon_code=order_in.coupon_code.upper() if order_in.coupon_code else None,
+            discount_amount=discount_amount,
             total_amount=total_amount,
             shipping_address=shipping_address,
             status=OrderStatus.PENDING,
@@ -129,6 +153,10 @@ class OrderService:
 
             if not product.is_always_in_stock:
                 product.stock -= item_data["quantity"]
+
+        # Increment coupon usage if a coupon was applied
+        if coupon:
+            CouponService.apply_coupon_to_order(db, coupon)
 
         db.query(CartItem).filter(CartItem.user_id == user.id).delete()
 

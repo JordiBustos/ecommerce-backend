@@ -26,6 +26,7 @@ from app.models.newsletter import NewsletterSubscriber
 from app.models.role import Role, user_roles
 from app.models.blocked_ip import BlockedIP
 from app.models.whitelisted_ip import WhitelistedIP
+from app.models.coupon import Coupon, coupon_users
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

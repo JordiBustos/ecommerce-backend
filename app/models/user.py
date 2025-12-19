@@ -30,6 +30,7 @@ class User(Base):
     favorite_products = relationship("Product", secondary=user_favorites, backref="favorited_by")
     price_lists = relationship("PriceList", secondary=price_list_users, back_populates="users")
     roles = relationship("Role", secondary="user_roles", back_populates="users")
+    coupons = relationship("Coupon", secondary="coupon_users", back_populates="assigned_users")
     
     def has_role(self, role_slug: str) -> bool:
         """Check if user has a specific role by slug"""

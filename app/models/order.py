@@ -21,6 +21,9 @@ class Order(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     address_id = Column(Integer, ForeignKey("addresses.id"), nullable=True)
     physical_store_id = Column(Integer, ForeignKey("physical_stores.id"), nullable=True)
+    coupon_id = Column(Integer, ForeignKey("coupons.id"), nullable=True)
+    coupon_code = Column(String, nullable=True)  # Snapshot of coupon code at order time
+    discount_amount = Column(Float, default=0.0, nullable=False)  # Actual discount applied
     total_amount = Column(Float, nullable=False)
     status = Column(Enum(OrderStatus), default=OrderStatus.PENDING)
     shipping_address = Column(String, nullable=True)  # Deprecated, keeping for backward compatibility
@@ -46,6 +49,7 @@ class Order(Base):
     user = relationship("User", back_populates="orders")
     address = relationship("Address")
     physical_store = relationship("PhysicalStore", foreign_keys=[physical_store_id])
+    coupon = relationship("Coupon")
     items = relationship("OrderItem", back_populates="order")
     receipts = relationship("PaymentReceipt", back_populates="order", cascade="all, delete-orphan")
 

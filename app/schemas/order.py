@@ -49,6 +49,7 @@ class OrderCreate(BaseModel):
     items: List[OrderItemCreate]
     replacement_criterion: Optional[str] = None
     comment: Optional[str] = None
+    coupon_code: Optional[str] = None  # Coupon code to apply
 
 
 class OrderUpdate(BaseModel):
@@ -64,6 +65,9 @@ class Order(OrderBase):
     user_id: int
     address_id: Optional[int] = None
     physical_store_id: Optional[int] = None
+    coupon_id: Optional[int] = None
+    coupon_code: Optional[str] = None
+    discount_amount: float = 0.0
     total_amount: float
     status: OrderStatus
     payment_id: Optional[str] = None

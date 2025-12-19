@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     store,
     newsletter,
     roles,
+    coupons,
 )
 
 api_router = APIRouter()
@@ -32,3 +33,4 @@ api_router.include_router(
 api_router.include_router(store.router, prefix="/store", tags=["store"])
 api_router.include_router(newsletter.router, prefix="/newsletter", tags=["newsletter"])
 api_router.include_router(roles.router, prefix="/roles", tags=["roles"])
+api_router.include_router(coupons.router, prefix="/coupons", tags=["coupons"])
